@@ -1,0 +1,36 @@
+spring:
+  datasource:
+    url: jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1;MODE=PostgreSQL
+    driver-class-name: org.h2.Driver
+    username: sa
+    password: 
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    database-platform: org.hibernate.dialect.H2Dialect
+
+finsight:
+  reconciliation:
+    settlement-delay-hours: 24
+  ai:
+    enabled: false
+
+security:
+  operator:
+    username: operator
+    password: operator123
+  analyst:
+    username: analyst
+    password: analyst123
+  admin:
+    username: admin
+    password: admin123
+  merchant_b_operator:
+    username: merchant_b_operator
+    password: merchant_b_operator123
+  merchant_b_analyst:
+    username: merchant_b_analyst
+    password: merchant_b_analyst123
+  merchant_b_admin:
+    username: merchant_b_admin
+    password: merchant_b_admin123

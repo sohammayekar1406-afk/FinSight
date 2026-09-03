@@ -1,0 +1,48 @@
+# Maven target directory
+target/
+!.mvn/wrapper/maven-wrapper.jar
+!**/src/main/**/target/
+!**/src/test/**/target/
+
+# IDE and Editor files
+.idea/
+*.iml
+*.iws
+*.ipr
+.classpath
+.project
+.settings/
+.vscode/
+*.sublime-workspace
+*.sublime-project
+
+# Logs and Debug
+*.log
+logs/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Environment files and credentials
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+
+# OS generated files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Node & Frontend build outputs
+node_modules/
+**/node_modules/
+dist/
+**/dist/
+build/
+**/build/
+.npm
+.eslintcache
+.vite

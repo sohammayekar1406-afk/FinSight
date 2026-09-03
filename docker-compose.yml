@@ -1,0 +1,26 @@
+version: '3.8'
+
+services:
+  finsight-backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: finsight_app
+    ports:
+      - "8080:8080"
+    environment:
+      - SUPABASE_DB_URL=${SUPABASE_DB_URL}
+      - SUPABASE_DB_USERNAME=${SUPABASE_DB_USERNAME}
+      - SUPABASE_DB_PASSWORD=${SUPABASE_DB_PASSWORD}
+      - AI_ENABLED=${AI_ENABLED:-false}
+      - AI_PROVIDER=${AI_PROVIDER:-gemini}
+      - AI_API_KEY=${AI_API_KEY:-}
+      - AI_MODEL=${AI_MODEL:-gemini-1.5-flash}
+      - SECURITY_OPERATOR_USERNAME=${SECURITY_OPERATOR_USERNAME:-operator}
+      - SECURITY_OPERATOR_PASSWORD=${SECURITY_OPERATOR_PASSWORD:-operator123}
+      - SECURITY_ANALYST_USERNAME=${SECURITY_ANALYST_USERNAME:-analyst}
+      - SECURITY_ANALYST_PASSWORD=${SECURITY_ANALYST_PASSWORD:-analyst123}
+      - SECURITY_ADMIN_USERNAME=${SECURITY_ADMIN_USERNAME:-admin}
+      - SECURITY_ADMIN_PASSWORD=${SECURITY_ADMIN_PASSWORD:-admin123}
+      - FRONTEND_ORIGIN=${FRONTEND_ORIGIN:-http://localhost:3000}
+    restart: unless-stopped

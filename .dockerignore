@@ -1,0 +1,13 @@
+target/
+.git/
+.gitignore
+.idea/
+.vscode/
+*.log
+.env
+.env.*
+!.env.example
+node_modules/
+**/node_modules/
+dist/
+**/dist/

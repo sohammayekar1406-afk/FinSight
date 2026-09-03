@@ -1,0 +1,11 @@
+{
+  "name": "finsight-root",
+  "version": "1.0.0",
+  "private": true,
+  "description": "FinSight - AI-Powered Financial Reconciliation Platform",
+  "scripts": {
+    "build:frontend": "npm --prefix next-app install && npm --prefix next-app run build",
+    "lint:frontend": "npm --prefix next-app run lint",
+    "typecheck:frontend": "npm --prefix next-app run typecheck"
+  }
+}

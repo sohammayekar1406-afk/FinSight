@@ -1,0 +1,50 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: finsight
+
+  datasource:
+    url: ${SUPABASE_DB_URL:jdbc:postgresql://localhost:5432/finsight}
+    username: ${SUPABASE_DB_USERNAME:postgres}
+    password: ${SUPABASE_DB_PASSWORD:postgres}
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: 10
+      minimum-idle: 2
+      idle-timeout: 300000
+      connection-timeout: 20000
+      max-lifetime: 1200000
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: false
+
+finsight:
+  reconciliation:
+    settlement-delay-hours: 24
+  ai:
+    enabled: ${AI_ENABLED:false}
+    provider: ${AI_PROVIDER:gemini}
+    api-key: ${AI_API_KEY:}
+    model: ${AI_MODEL:gemini-1.5-flash}
+    base-url: ${AI_BASE_URL:https://generativelanguage.googleapis.com}
+    timeout-ms: ${AI_TIMEOUT_MS:5000}
+
+security:
+  operator:
+    username: ${SECURITY_OPERATOR_USERNAME:operator}
+    password: ${SECURITY_OPERATOR_PASSWORD:operator123}
+  analyst:
+    username: ${SECURITY_ANALYST_USERNAME:analyst}
+    password: ${SECURITY_ANALYST_PASSWORD:analyst123}
+  admin:
+    username: ${SECURITY_ADMIN_USERNAME:admin}
+    password: ${SECURITY_ADMIN_PASSWORD:admin123}
+
+

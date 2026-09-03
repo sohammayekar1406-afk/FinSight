@@ -1,0 +1,25 @@
+package com.ledgerlens.controller;
+
+import com.ledgerlens.dto.SeedResponseDto;
+import com.ledgerlens.service.SeedDataService;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+@RestController
+@RequestMapping("/api/demo")
+public class DemoSeedController {
+
+    private final SeedDataService seedDataService;
+
+    public DemoSeedController(SeedDataService seedDataService) {
+        this.seedDataService = seedDataService;
+    }
+
+    @PostMapping("/seed")
+    public ResponseEntity<SeedResponseDto> seedDemoData() {
+        SeedResponseDto response = seedDataService.seedDemoData();
+        return ResponseEntity.ok(response);
+    }
+}
