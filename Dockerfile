@@ -1,16 +1,12 @@
 # Multi-stage Docker build for FinSight Platform
-FROM eclipse-temurin:21-jdk-alpine AS builder
+FROM maven:3.9.16-eclipse-temurin-21-alpine AS builder
 WORKDIR /app
 
-# Copy Maven wrapper & dependencies pom
-COPY .mvn/ .mvn/
-COPY mvnw pom.xml ./
-RUN chmod +x mvnw && ./mvnw dependency:go-offline -B || true
-
-# Copy frontend source and Java source
+COPY pom.xml ./
 COPY next-app next-app
 COPY src src
-RUN ./mvnw clean package -DskipTests
+
+RUN mvn -B clean package -DskipTests
 
 # Minimal production runtime image
 FROM eclipse-temurin:21-jre-alpine
