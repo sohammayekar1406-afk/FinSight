@@ -1,0 +1,15 @@
+# FinSight Git Attributes
+# Exclude generated Vite/Rollup build assets from whitespace checking
+# Source code remains strictly checked
+
+# Generated frontend build assets (Vite/Rollup output)
+src/main/resources/static/assets/*.js -whitespace
+src/main/resources/static/assets/*.css -whitespace
+
+# Source code: strict whitespace checking (default behavior)
+*.java whitespace
+*.ts whitespace
+*.tsx whitespace
+*.yml whitespace
+*.yaml whitespace
+*.md whitespace
