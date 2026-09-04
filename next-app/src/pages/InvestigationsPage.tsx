@@ -115,7 +115,7 @@ export default function InvestigationsPage() {
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs border-collapse">
             <thead>
-              <tr className="border-b border-border bg-muted/30 text-muted-foreground font-medium">
+              <tr className="border-b border-border bg-muted/30 text-muted-foreground/70 font-semibold uppercase tracking-wider text-[11px]">
                 <th className="py-3 px-4">Exception ID</th>
                 <th className="py-3 px-4">Type</th>
                 <th className="py-3 px-4">Severity</th>
@@ -130,7 +130,7 @@ export default function InvestigationsPage() {
                 exceptions.map((exp) => (
                   <tr
                     key={exp.id || exp.exceptionId}
-                    className="hover:bg-muted/40 transition-colors cursor-pointer"
+                    className="even:bg-muted/15 hover:bg-muted/35 transition-colors duration-150 cursor-pointer"
                     onClick={() => navigate(`/investigations/${exp.exceptionId}`)}
                   >
                     <td className="py-3.5 px-4 font-mono font-medium text-foreground">

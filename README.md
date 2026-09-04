@@ -4,6 +4,26 @@
 
 ---
 
+## 🚀 Quick Start — One Command, One URL
+
+> **The only command you need:**
+>
+> ```bash
+> # Windows
+> .\mvnw.cmd spring-boot:run
+>
+> # Linux / macOS
+> ./mvnw spring-boot:run
+> ```
+>
+> **Then open: [`http://localhost:8080`](http://localhost:8080)**
+>
+> Login with `admin` / `admin123` (or `analyst` / `analyst123`, `operator` / `operator123`).
+>
+> FinSight is a **single-server app**. Spring Boot serves both the REST API and the React frontend from the same port 8080. There is no separate frontend server. **Do not use port 5173 to run the full app** — that port is a Vite HMR dev server used only for frontend-only development (see [Option B](#option-b-frontend-hmr-dev-mode-frontend-only-requires-backend-at-8080) below).
+
+---
+
 ## 📌 Problem
 
 In modern payment gateway ecosystems (e.g., Razorpay, Stripe, Adyen), financial operations teams manage millions of transactions across fragmented systems: merchant orders, gateway authorization events, processor batches, refunds, interchange fee schedules, and bank disbursements.
@@ -168,70 +188,82 @@ For complete testing details and suite breakdowns, see [`docs/TESTING.md`](docs/
 
 ---
 
-### Option A: Unified Single-Port Launch (Recommended)
-FinSight packages the React SPA directly into Spring Boot. Both the REST API and the frontend are served from a single port (**8080**):
+### Option A — Single-Server Launch (The Standard Way)
 
+FinSight packages the React SPA directly into Spring Boot so both the API and the frontend are served from **one port, one URL**.
+
+**Step 1 — Clone and configure**
 ```bash
-# 1. Clone the repository
 git clone https://github.com/sohammayekar1406-afk/FinSight.git
 cd FinSight
 
-# 2. Configure environment (optional - defaults to safe local placeholders)
+# Copy the environment template (fill in Supabase credentials, or leave defaults for local PostgreSQL)
 cp .env.example .env
+```
 
-# 3. Build the unified package (compiles React, bundles static assets, runs all 138 tests)
-# Windows:
-.\mvnw.cmd clean package
+**Step 2 — Build the frontend into Spring Boot** *(required once, then only on frontend changes)*
+```bash
+# Windows
+.\mvnw.cmd clean package -DskipTests
 
-# Linux / macOS:
-./mvnw clean package
+# Linux / macOS
+./mvnw clean package -DskipTests
+```
 
-# 4. Run the application
-# Windows:
+**Step 3 — Run**
+```bash
+# Windows
 .\mvnw.cmd spring-boot:run
 
-# Linux / macOS:
+# Linux / macOS
 ./mvnw spring-boot:run
 ```
 
-#### Access Endpoints:
+**Open: [`http://localhost:8080`](http://localhost:8080)** — this is the only URL for the full application.
+
 | Interface | URL |
 | :--- | :--- |
-| **Operations Dashboard (React SPA)** | `http://localhost:8080/dashboard` |
+| **Operations Dashboard** | **`http://localhost:8080/dashboard`** |
 | **Login Page** | `http://localhost:8080/login` |
 | **Swagger UI / OpenAPI** | `http://localhost:8080/swagger-ui/index.html` |
 | **Health Endpoint** | `http://localhost:8080/api/health` |
 
-#### Default Credentials:
-- **Administrator**: `admin` / `admin123`
-- **Financial Analyst**: `analyst` / `analyst123`
-- **Operations Operator**: `operator` / `operator123`
+Default credentials:
+- **admin** / `admin123`
+- **analyst** / `analyst123`
+- **operator** / `operator123`
 
 ---
 
-### Option B: Separate Frontend Development Server
-If you are developing frontend components with hot-module replacement (Vite HMR):
+### Option B — Frontend HMR Dev Mode *(frontend-only — requires backend at :8080)*
+
+> [!WARNING]
+> **`http://localhost:5173` is NOT the full application.** It is a Vite hot-reload server that proxies `/api` to `http://localhost:8080`. If Spring Boot is not running at `:8080`, every API call returns **502 Bad Gateway** and the dashboard shows "Unable to load" errors.
+>
+> Use this mode **only** when you are actively developing React components and need instant hot-module replacement. For all other use cases, use Option A.
 
 ```bash
-# Terminal 1: Backend
+# Terminal 1 — start the backend first (required)
 .\mvnw.cmd spring-boot:run
 
-# Terminal 2: Frontend
+# Terminal 2 — start the Vite HMR dev server
 cd next-app
 npm install
-npm run dev
+npm run dev:frontend-only
 ```
-Frontend development server opens at `http://localhost:5173` (proxies `/api` to `http://localhost:8080`).
+
+The Vite dev server opens at `http://localhost:5173` and proxies all `/api/*` requests to the Spring Boot backend at `:8080`. Both processes must be running.
 
 ---
 
-### Option C: Docker Deployment
+### Option C — Docker Deployment
 ```bash
 # Build and run with Docker Compose
 docker-compose up --build
 ```
 
 ---
+
 
 ## 📁 Project Structure
 

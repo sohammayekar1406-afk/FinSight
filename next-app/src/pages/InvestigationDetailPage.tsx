@@ -20,6 +20,10 @@ import {
   CheckCircle2,
   RefreshCw,
   Sparkles,
+  Layers,
+  History,
+  Lightbulb,
+  AlertCircle,
 } from "lucide-react"
 
 export default function InvestigationDetailPage() {
@@ -142,7 +146,7 @@ export default function InvestigationDetailPage() {
             <div className="text-right">
               <div className="text-muted-foreground">Confidence Score</div>
               <div className="text-xl font-bold text-emerald-400">
-                {Math.round((investigation.confidenceScore ?? 0) * 100)}%
+                {Math.round(investigation.confidenceScore ?? 0)}%
               </div>
             </div>
             <div className="text-right">
@@ -219,6 +223,174 @@ export default function InvestigationDetailPage() {
           <SectionCard title="Transaction Lineage Graph" description="Authoritative multi-party transaction chain from database">
             <TransactionLineage nodes={lineageNodes} />
           </SectionCard>
+
+          {/* Evidence Graph & Sufficiency (Phase 3.5) */}
+          {investigation.evidenceGraph && (
+            <SectionCard
+              title="Evidence Graph & Provenance"
+              description={`Structured facts retrieved from database with provenance (${investigation.evidenceGraph.foundNodes} found, ${investigation.evidenceGraph.missingNodes} missing)`}
+              actions={
+                investigation.evidenceSufficiency && (
+                  <Badge
+                    variant="outline"
+                    className={`text-xs ${
+                      investigation.evidenceSufficiency.isSufficient || investigation.evidenceSufficiency.assessment === 'SUFFICIENT'
+                        ? 'text-emerald-400 border-emerald-500/30'
+                        : 'text-amber-400 border-amber-500/30'
+                    }`}
+                  >
+                    Sufficiency: {Math.round(investigation.evidenceSufficiency.sufficiencyScore)}%
+                    {investigation.evidenceSufficiency.sufficiencyLevel || investigation.evidenceSufficiency.assessment
+                      ? ` (${investigation.evidenceSufficiency.sufficiencyLevel || investigation.evidenceSufficiency.assessment})`
+                      : ''}
+                  </Badge>
+                )
+              }
+            >
+              <div className="space-y-3">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                  {investigation.evidenceGraph.nodes.map((node, i) => (
+                    <div key={i} className="p-3 rounded-lg bg-muted/30 border border-border text-xs space-y-1.5">
+                      <div className="flex items-center justify-between">
+                        <span className="font-semibold text-foreground flex items-center gap-1.5">
+                          <Layers className="w-3.5 h-3.5 text-muted-foreground" />
+                          {node.entityType}
+                        </span>
+                        <Badge
+                          variant="outline"
+                          className={node.availability === "FOUND" ? "text-emerald-400 border-emerald-500/30 text-[10px]" : "text-amber-400 border-amber-500/30 text-[10px]"}
+                        >
+                          {node.availability}
+                        </Badge>
+                      </div>
+                      <div className="font-mono text-[11px] text-muted-foreground truncate">
+                        ID: {node.entityId || "N/A"}
+                      </div>
+                      <div className="text-[11px] text-muted-foreground">
+                        Source: <span className="font-mono text-zinc-300">{node.source}</span>
+                      </div>
+                      {node.amount !== undefined && node.amount !== null && (
+                        <div className="text-[11px] text-muted-foreground">
+                          Amount: <span className="font-mono text-zinc-200">{formatCurrency(node.amount)}</span>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </SectionCard>
+          )}
+
+          {/* Historical Cases / RAG Evidence (Phase 6) */}
+          <SectionCard
+            title="Historical Cases / RAG Evidence"
+            description="Vector & semantic retrieval over previously resolved investigations (merchant-isolated)"
+          >
+            {investigation.ragHistoricalCases && investigation.ragHistoricalCases.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {investigation.ragHistoricalCases.map((rc, idx) => (
+                  <div key={idx} className="p-4 rounded-lg bg-muted/30 border border-border space-y-2 text-xs">
+                    <div className="flex items-center justify-between">
+                      <span className="font-mono text-foreground font-semibold flex items-center gap-1.5">
+                        <History className="w-3.5 h-3.5 text-purple-400" />
+                        {rc.exceptionId}
+                      </span>
+                      <Badge variant="outline" className="text-purple-400 border-purple-500/30 text-[10px]">
+                        {Math.round((rc.similarityScore ?? 0) * 100)}% Similarity
+                      </Badge>
+                    </div>
+                    <div>
+                      <span className="text-muted-foreground text-[11px]">Type: </span>
+                      <span className="font-mono text-zinc-300">{rc.exceptionType}</span>
+                    </div>
+                    {rc.discrepancyAmount && (
+                      <div>
+                        <span className="text-muted-foreground text-[11px]">Discrepancy: </span>
+                        <span className="font-mono text-amber-400">{formatCurrency(rc.discrepancyAmount)}</span>
+                      </div>
+                    )}
+                    <div className="pt-1 border-t border-border/50 space-y-1">
+                      <p className="text-[11px] text-muted-foreground leading-snug">
+                        <span className="font-medium text-zinc-300">Previous Root Cause:</span> {rc.previousRootCause}
+                      </p>
+                      <p className="text-[11px] text-muted-foreground leading-snug">
+                        <span className="font-medium text-zinc-300">Resolution:</span> {rc.previousResolution}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="p-4 rounded-lg bg-muted/20 border border-border text-center text-xs text-muted-foreground">
+                No past resolved cases matched the similarity threshold (0.50). Pure deterministic rules & ground truth evidence applied.
+              </div>
+            )}
+          </SectionCard>
+
+          {/* Forensic Hypotheses */}
+          {investigation.hypotheses && investigation.hypotheses.length > 0 && (
+            <SectionCard
+              title="Forensic Diagnostic Hypotheses"
+              description="Competing explanations evaluated against ground truth evidence"
+            >
+              <div className="space-y-3">
+                {investigation.hypotheses.map((h, idx) => (
+                  <div key={idx} className="p-4 rounded-lg bg-muted/30 border border-border space-y-2 text-xs">
+                    <div className="flex items-center justify-between">
+                      <span className="font-semibold text-foreground flex items-center gap-1.5">
+                        <Lightbulb className="w-3.5 h-3.5 text-amber-400" />
+                        Hypothesis {idx + 1}
+                      </span>
+                      <div className="flex items-center gap-2">
+                        <Badge variant="outline" className="text-emerald-400 border-emerald-500/30 text-[10px]">
+                          {Math.round(h.confidence)}% Confidence
+                        </Badge>
+                        <Badge variant="outline" className="text-zinc-300 text-[10px]">
+                          {h.status}
+                        </Badge>
+                      </div>
+                    </div>
+                    <p className="text-muted-foreground">{h.hypothesis}</p>
+                    {h.supportingEvidence && h.supportingEvidence.length > 0 && (
+                      <div className="pt-1 border-t border-border/40 text-[11px]">
+                        <span className="text-muted-foreground font-medium">Supporting Evidence: </span>
+                        <ul className="list-disc list-inside mt-0.5 text-zinc-400 space-y-0.5">
+                          {h.supportingEvidence.map((ev, i) => (
+                            <li key={i}>{ev}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </SectionCard>
+          )}
+
+          {/* Contradictions (if present) */}
+          {investigation.contradictions && investigation.contradictions.length > 0 && (
+            <SectionCard
+              title="Detected Contradictions"
+              description="Conflicting evidence signals requiring reconciliation"
+            >
+              <div className="space-y-3">
+                {investigation.contradictions.map((c, idx) => (
+                  <div key={idx} className="p-4 rounded-lg bg-red-950/20 border border-red-500/20 space-y-1.5 text-xs">
+                    <div className="flex items-center justify-between">
+                      <span className="font-semibold text-red-400 flex items-center gap-1.5">
+                        <AlertCircle className="w-3.5 h-3.5" />
+                        Contradiction: {c.contradiction}
+                      </span>
+                      <Badge variant="outline" className="text-red-400 border-red-500/30 text-[10px]">
+                        {c.severity}
+                      </Badge>
+                    </div>
+                    <p className="text-muted-foreground">{c.resolution}</p>
+                  </div>
+                ))}
+              </div>
+            </SectionCard>
+          )}
         </>
       )}
     </div>

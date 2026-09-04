@@ -32,8 +32,13 @@ export default function SettingsPage() {
     try {
       const res = await demoApi.seed()
       toast.success(res.message || "Demo dataset seeded successfully!")
-    } catch {
-      toast.error("Failed to seed demo data. Only ADMIN role can perform seeding.")
+    } catch (err: unknown) {
+      const e = err as { response?: { status?: number; data?: { message?: string } }; message?: string }
+      if (e?.response?.status === 403) {
+        toast.error("Failed to seed demo data. Only ADMIN role can perform seeding.")
+      } else {
+        toast.error(e?.response?.data?.message || e?.message || "Failed to seed demo data.")
+      }
     } finally {
       setSeeding(false)
     }
@@ -45,8 +50,13 @@ export default function SettingsPage() {
       const res = await demoApi.validate()
       setValidationReport(res as unknown as Record<string, unknown>)
       toast.success(`E2E Validation Complete: Status ${res.overallStatus}`)
-    } catch {
-      toast.error("Failed to execute automated demo validation suite.")
+    } catch (err: unknown) {
+      const e = err as { response?: { status?: number; data?: { message?: string } }; message?: string }
+      if (e?.response?.status === 403) {
+        toast.error("Validation requires ADMIN role credentials.")
+      } else {
+        toast.error(e?.response?.data?.message || e?.message || "Failed to execute automated demo validation suite.")
+      }
     } finally {
       setValidating(false)
     }

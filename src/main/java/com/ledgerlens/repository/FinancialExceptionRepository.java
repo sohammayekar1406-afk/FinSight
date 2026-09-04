@@ -17,6 +17,7 @@ public interface FinancialExceptionRepository extends JpaRepository<FinancialExc
     Optional<FinancialException> findByExceptionIdAndMerchantId(String exceptionId, String merchantId);
     List<FinancialException> findByMerchantId(String merchantId);
     Page<FinancialException> findByMerchantId(String merchantId, Pageable pageable);
+    boolean existsByDeduplicationKey(String deduplicationKey);
     boolean existsByExceptionTypeAndStatusNotAndStatusNotAndOrderAndPaymentAndRefundAndSettlement(
             com.ledgerlens.entity.enums.ExceptionType exceptionType,
             com.ledgerlens.entity.enums.ExceptionStatus status1,

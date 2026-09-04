@@ -38,6 +38,13 @@ public class ExceptionDetectionService {
             BigDecimal discrepancyAmount,
             String description) {
 
+        String deduplicationKey = deduplicationKey(type, order, payment, refund, settlement);
+
+        // A finding remains deduplicated after human resolution because its key is immutable.
+        if (exceptionRepository.existsByDeduplicationKey(deduplicationKey)) {
+            return false;
+        }
+
         // The pre-check avoids unnecessary writes; the unique key below is the concurrency guarantee.
         boolean alreadyExists = exceptionRepository.existsByExceptionTypeAndStatusNotAndStatusNotAndOrderAndPaymentAndRefundAndSettlement(
                 type, ExceptionStatus.RESOLVED_AUTO, ExceptionStatus.RESOLVED_MANUAL, order, payment, refund, settlement
@@ -65,7 +72,7 @@ public class ExceptionDetectionService {
                 .settlement(settlement)
                 .description(description)
                 .build();
-        financialException.setDeduplicationKey(deduplicationKey(type, order, payment, refund, settlement));
+        financialException.setDeduplicationKey(deduplicationKey);
 
         try {
             exceptionRepository.saveAndFlush(financialException);

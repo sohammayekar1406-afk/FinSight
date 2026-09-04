@@ -48,7 +48,7 @@ export default function ExceptionDetailPage() {
       success: (res) => {
         refetch()
         refetchInv()
-        return `Investigation complete: Analysis source is ${res.analysisSource}. Root cause identified with ${Math.round((res.confidenceScore ?? 0) * 100)}% confidence.`
+        return `Investigation complete: Analysis source is ${res.analysisSource}. Root cause identified with ${Math.round(res.confidenceScore ?? 0)}% confidence.`
       },
       error: "Failed to complete AI investigation.",
     })
@@ -218,7 +218,7 @@ export default function ExceptionDetailPage() {
               <div className="flex justify-between items-center py-1 border-b border-border/50">
                 <span className="text-muted-foreground">Confidence Score:</span>
                 <span className="font-semibold text-emerald-400">
-                  {Math.round((investigation.confidenceScore ?? 0) * 100)}%
+                  {Math.round(investigation.confidenceScore ?? 0)}%
                 </span>
               </div>
               <div className="flex justify-between items-center py-1 border-b border-border/50">

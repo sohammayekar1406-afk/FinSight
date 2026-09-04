@@ -134,23 +134,25 @@ public class SeedDataService {
         getOrCreatePayment("pay_hero_5", ordHero5, "merchant_a", PaymentMethod.CARD, new BigDecimal("8000.00"), PaymentStatus.SUCCESS, null, OffsetDateTime.now(), paymentsCreated);
 
         // ─── 70 CLEAN BULK DATA RECORDS FOR REALISTIC METRICS ───
-        for (int i = 2001; i <= 2070; i++) {
-            String ordId = "ord_" + i;
-            String payId = "pay_" + i;
-            String setId = "set_" + i;
-            String custId = "cust_" + (i - 1000);
+        if (orderRepository.findByOrderId("ord_2001").isEmpty()) {
+            for (int i = 2001; i <= 2070; i++) {
+                String ordId = "ord_" + i;
+                String payId = "pay_" + i;
+                String setId = "set_" + i;
+                String custId = "cust_" + (i - 1000);
 
-            BigDecimal amount = new BigDecimal("1000.00").add(new BigDecimal(i % 10).multiply(new BigDecimal("100.00")));
-            BigDecimal feeRate = new BigDecimal("0.0200");
-            BigDecimal feeAmt = amount.multiply(feeRate).setScale(2, java.math.RoundingMode.HALF_UP);
-            BigDecimal taxAmt = feeAmt.multiply(new BigDecimal("0.18")).setScale(2, java.math.RoundingMode.HALF_UP);
-            BigDecimal totalFee = feeAmt.add(taxAmt);
-            BigDecimal netAmt = amount.subtract(totalFee);
+                BigDecimal amount = new BigDecimal("1000.00").add(new BigDecimal(i % 10).multiply(new BigDecimal("100.00")));
+                BigDecimal feeRate = new BigDecimal("0.0200");
+                BigDecimal feeAmt = amount.multiply(feeRate).setScale(2, java.math.RoundingMode.HALF_UP);
+                BigDecimal taxAmt = feeAmt.multiply(new BigDecimal("0.18")).setScale(2, java.math.RoundingMode.HALF_UP);
+                BigDecimal totalFee = feeAmt.add(taxAmt);
+                BigDecimal netAmt = amount.subtract(totalFee);
 
-            Order bulkOrd = getOrCreateOrder(ordId, "merchant_a", custId, amount, OrderStatus.PAID, ordersCreated);
-            Settlement bulkSet = getOrCreateSettlement(setId, "merchant_a", amount, BigDecimal.ZERO, feeAmt, taxAmt, BigDecimal.ZERO, netAmt, netAmt, SettlementStatus.SETTLED, "UTR9988" + i, settlementsCreated);
-            Payment bulkPay = getOrCreatePayment(payId, bulkOrd, "merchant_a", PaymentMethod.CARD, amount, PaymentStatus.SUCCESS, bulkSet, OffsetDateTime.now(), paymentsCreated);
-            createFeeIfAbsent(bulkPay, null, "merchant_a", feeAmt, taxAmt, totalFee, feeRate, feesCreated);
+                Order bulkOrd = getOrCreateOrder(ordId, "merchant_a", custId, amount, OrderStatus.PAID, ordersCreated);
+                Settlement bulkSet = getOrCreateSettlement(setId, "merchant_a", amount, BigDecimal.ZERO, feeAmt, taxAmt, BigDecimal.ZERO, netAmt, netAmt, SettlementStatus.SETTLED, "UTR9988" + i, settlementsCreated);
+                Payment bulkPay = getOrCreatePayment(payId, bulkOrd, "merchant_a", PaymentMethod.CARD, amount, PaymentStatus.SUCCESS, bulkSet, OffsetDateTime.now(), paymentsCreated);
+                createFeeIfAbsent(bulkPay, null, "merchant_a", feeAmt, taxAmt, totalFee, feeRate, feesCreated);
+            }
         }
 
         return SeedResponseDto.builder()

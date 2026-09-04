@@ -10,17 +10,17 @@ const SEVERITY_CONFIG: Record<
   ExceptionSeverity,
   { label: string; className: string }
 > = {
-  CRITICAL: { label: "Critical", className: "severity-critical" },
-  HIGH: { label: "High", className: "severity-high" },
-  MEDIUM: { label: "Medium", className: "severity-medium" },
-  LOW: { label: "Low", className: "severity-low" },
+  CRITICAL: { label: "Critical", className: "bg-rose-500/10 text-rose-400 border-rose-500/25" },
+  HIGH: { label: "High", className: "bg-orange-500/10 text-orange-400 border-orange-500/25" },
+  MEDIUM: { label: "Medium", className: "bg-amber-500/10 text-amber-400 border-amber-500/25" },
+  LOW: { label: "Low", className: "bg-emerald-500/10 text-emerald-400 border-emerald-500/25" },
 }
 
 export function SeverityBadge({ severity }: { severity: ExceptionSeverity }) {
   const config = SEVERITY_CONFIG[severity]
   return (
     <span
-      className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${config.className}`}
+      className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-medium border ${config.className}`}
     >
       {config.label}
     </span>
@@ -32,18 +32,18 @@ export function SeverityBadge({ severity }: { severity: ExceptionSeverity }) {
 // ============================================================
 
 const STATUS_CONFIG: Record<ExceptionStatus, { label: string; className: string }> = {
-  OPEN: { label: "Open", className: "status-open" },
-  INVESTIGATING: { label: "Investigating", className: "status-investigating" },
-  RESOLVED_AUTO: { label: "Resolved (Auto)", className: "status-resolved-auto" },
-  RESOLVED_MANUAL: { label: "Resolved (Manual)", className: "status-resolved-manual" },
-  ESCALATED: { label: "Escalated", className: "status-escalated" },
+  OPEN: { label: "Open", className: "bg-zinc-500/10 text-zinc-300 border-zinc-500/25" },
+  INVESTIGATING: { label: "Investigating", className: "bg-purple-500/10 text-purple-300 border-purple-500/25" },
+  RESOLVED_AUTO: { label: "Resolved (Auto)", className: "bg-emerald-500/10 text-emerald-400 border-emerald-500/25" },
+  RESOLVED_MANUAL: { label: "Resolved (Manual)", className: "bg-teal-500/10 text-teal-400 border-teal-500/25" },
+  ESCALATED: { label: "Escalated", className: "bg-rose-500/10 text-rose-400 border-rose-500/25" },
 }
 
 export function StatusBadge({ status }: { status: ExceptionStatus }) {
   const config = STATUS_CONFIG[status]
   return (
     <span
-      className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${config.className}`}
+      className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-medium border ${config.className}`}
     >
       {config.label}
     </span>
@@ -69,7 +69,7 @@ const TYPE_LABELS: Record<ExceptionType, string> = {
 
 export function ExceptionTypeBadge({ type }: { type: ExceptionType }) {
   return (
-    <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-muted text-muted-foreground border border-border">
+    <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-medium bg-muted/60 text-zinc-300 border border-border/70 font-mono">
       {TYPE_LABELS[type]}
     </span>
   )
@@ -92,7 +92,7 @@ export function PageHeader({ title, description, actions, className = "" }: Page
       <div>
         <h1 className="text-xl font-semibold text-foreground tracking-tight">{title}</h1>
         {description && (
-          <p className="text-sm text-muted-foreground mt-0.5">{description}</p>
+          <p className="text-sm text-muted-foreground/60 mt-0.5">{description}</p>
         )}
       </div>
       {actions && <div className="flex items-center gap-2 flex-shrink-0">{actions}</div>}
@@ -123,14 +123,16 @@ export function SectionCard({
 }: SectionCardProps) {
   return (
     <div className={`ll-card ${className}`}>
+      {/* Subtle top edge highlight */}
+      <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/10 to-transparent pointer-events-none" />
       {(title || description || actions) && (
-        <div className="flex items-center justify-between gap-4 px-5 py-4 border-b border-border">
+        <div className="flex items-center justify-between gap-4 px-5 py-4 border-b border-border/80">
           <div>
             {title && (
-              <h2 className="text-sm font-semibold text-foreground">{title}</h2>
+              <h2 className="text-sm font-semibold text-foreground tracking-tight">{title}</h2>
             )}
             {description && (
-              <p className="text-xs text-muted-foreground mt-0.5">{description}</p>
+              <p className="text-xs text-muted-foreground/70 mt-0.5">{description}</p>
             )}
           </div>
           {actions && <div className="flex items-center gap-2">{actions}</div>}
@@ -148,7 +150,7 @@ export function SectionCard({
 interface MetricCardProps {
   title: string
   value: string | number
-  description?: string
+  description?: ReactNode
   icon?: ReactNode
   trend?: {
     value: string
@@ -165,33 +167,47 @@ export function MetricCard({
   icon,
   trend,
   className = "",
-  accentColor = "text-primary",
+  accentColor = "text-foreground",
 }: MetricCardProps) {
   return (
-    <div className={`ll-card p-5 flex flex-col gap-3 ${className}`}>
-      <div className="flex items-center justify-between">
-        <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+    <div className={`ll-card relative overflow-hidden p-5 flex flex-col justify-between gap-3.5 transition-all duration-200 hover:border-zinc-700/80 hover:shadow-lg hover:shadow-black/25 hover:-translate-y-0.5 ${className}`}>
+      {/* Subtle top edge highlight */}
+      <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/10 to-transparent pointer-events-none" />
+
+      <div className="flex items-center justify-between gap-2">
+        <span className="text-[11px] font-semibold text-muted-foreground/70 uppercase tracking-wider">
           {title}
         </span>
-        {icon && <span className={`${accentColor} opacity-60`}>{icon}</span>}
-      </div>
-      <div className="flex items-end justify-between gap-2">
-        <div className={`text-2xl font-semibold tracking-tight ${accentColor}`}>{value}</div>
-        {trend && (
-          <span
-            className={`text-xs font-medium px-1.5 py-0.5 rounded ${
-              trend.positive
-                ? "text-emerald-500 bg-emerald-500/10"
-                : "text-red-500 bg-red-500/10"
-            }`}
-          >
-            {trend.positive ? "↑" : "↓"} {trend.value}
-          </span>
+        {icon && (
+          <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-muted/40 border border-border/60 text-muted-foreground shrink-0">
+            {icon}
+          </div>
         )}
       </div>
-      {description && (
-        <p className="text-xs text-muted-foreground leading-relaxed">{description}</p>
-      )}
+
+      <div className="space-y-1">
+        <div className="flex items-baseline justify-between gap-2">
+          <div className={`text-3xl font-bold tracking-tighter ${accentColor}`}>
+            {value}
+          </div>
+          {trend && (
+            <span
+              className={`text-xs font-medium px-2 py-0.5 rounded-full border ${
+                trend.positive
+                  ? "text-emerald-400 bg-emerald-500/10 border-emerald-500/20"
+                  : "text-rose-400 bg-rose-500/10 border-rose-500/20"
+              }`}
+            >
+              {trend.positive ? "↑" : "↓"} {trend.value}
+            </span>
+          )}
+        </div>
+        {description && (
+          <div className="text-xs text-muted-foreground/70 leading-relaxed font-medium">
+            {description}
+          </div>
+        )}
+      </div>
     </div>
   )
 }

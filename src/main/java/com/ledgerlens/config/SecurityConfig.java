@@ -98,6 +98,7 @@ public class SecurityConfig {
                     "/", "/index.html",
                     "/login", "/dashboard", "/exceptions", "/exceptions/**",
                     "/investigations", "/investigations/**",
+                    "/transactions", "/transactions/**",
                     "/audit-logs", "/settings", "/landing", "/landing/**",
                     // Vite build output: hashed JS/CSS bundles live under /assets/
                     "/assets/**",

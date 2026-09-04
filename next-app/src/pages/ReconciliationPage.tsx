@@ -171,11 +171,66 @@ export default function ReconciliationPage() {
 
           {/* Items breakdown list */}
           {lastResult.items && lastResult.items.length > 0 && (
-            <SectionCard title="Reconciliation Item Audit Log" description="Individual rule evaluation results from last run" noPadding>
+            <>
+              {/* Rules breakdown bar chart */}
+              <SectionCard title="Rules Performance Visualization" description="Pass/Exception counts per reconciliation rule">
+                <div className="space-y-3">
+                  {(() => {
+                    const ruleStats: Record<string, { passed: number; failed: number }> = {}
+                    lastResult.items.forEach(item => {
+                      if (!ruleStats[item.ruleApplied]) {
+                        ruleStats[item.ruleApplied] = { passed: 0, failed: 0 }
+                      }
+                      if (item.passed) {
+                        ruleStats[item.ruleApplied].passed++
+                      } else {
+                        ruleStats[item.ruleApplied].failed++
+                      }
+                    })
+
+                    return Object.entries(ruleStats).sort(([a], [b]) => a.localeCompare(b)).map(([rule, counts]) => {
+                      const total = counts.passed + counts.failed
+                      const passPercent = (counts.passed / total) * 100
+                      const failPercent = (counts.failed / total) * 100
+
+                      return (
+                        <div key={rule} className="space-y-1.5">
+                          <div className="flex items-center justify-between text-xs">
+                            <span className="font-mono text-muted-foreground/80 font-medium">{rule}</span>
+                            <span className="text-muted-foreground/60 text-[11px]">{total} checks</span>
+                          </div>
+                          <div className="flex gap-1 h-2 rounded-full overflow-hidden bg-muted/30">
+                            {counts.passed > 0 && (
+                              <div
+                                className="bg-emerald-500 transition-all duration-300"
+                                style={{ width: `${passPercent}%` }}
+                                title={`${counts.passed} passed`}
+                              />
+                            )}
+                            {counts.failed > 0 && (
+                              <div
+                                className="bg-amber-500 transition-all duration-300"
+                                style={{ width: `${failPercent}%` }}
+                                title={`${counts.failed} exceptions`}
+                              />
+                            )}
+                          </div>
+                          <div className="flex items-center justify-between text-[11px]">
+                            <span className="text-emerald-400 font-mono">{counts.passed} passed</span>
+                            <span className="text-amber-400 font-mono">{counts.failed} exceptions</span>
+                          </div>
+                        </div>
+                      )
+                    })
+                  })()}
+                </div>
+              </SectionCard>
+
+              <SectionCard title="Reconciliation Item Audit Log" description="Individual rule evaluation results from last run" noPadding>
               <div className="overflow-x-auto">
                 <table className="w-full text-left text-xs border-collapse">
                   <thead>
-                    <tr className="border-b border-border bg-muted/30 text-muted-foreground font-medium">
+                    <tr className="border-b border-border bg-muted/30 text-muted-foreground/70 font-semibold uppercase tracking-wider text-[11px]">
                       <th className="py-3 px-4">Item ID</th>
                       <th className="py-3 px-4">Type</th>
                       <th className="py-3 px-4">Rule Applied</th>
@@ -185,10 +240,10 @@ export default function ReconciliationPage() {
                   </thead>
                   <tbody className="divide-y divide-border">
                     {lastResult.items.map((item, i) => (
-                      <tr key={i} className="hover:bg-muted/40 transition-colors">
+                      <tr key={i} className="even:bg-muted/15 hover:bg-muted/35 transition-colors">
                         <td className="py-3 px-4 font-mono font-medium text-foreground">{item.itemId}</td>
                         <td className="py-3 px-4 text-muted-foreground">{item.itemType}</td>
-                        <td className="py-3 px-4 font-mono text-muted-foreground">{item.ruleApplied}</td>
+                        <td className="py-3 px-4 font-mono text-muted-foreground/80">{item.ruleApplied}</td>
                         <td className="py-3 px-4">
                           {item.passed ? (
                             <span className="text-emerald-400 font-medium">PASSED</span>
@@ -203,6 +258,7 @@ export default function ReconciliationPage() {
                 </table>
               </div>
             </SectionCard>
+            </>
           )}
         </div>
       )}

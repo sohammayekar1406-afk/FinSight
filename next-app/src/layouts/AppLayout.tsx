@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from "react"
 import { Outlet, useNavigate, useLocation } from "react-router-dom"
+import { motion, AnimatePresence } from "motion/react"
 import { useAuth } from "@/contexts/AuthContext"
 import { useTheme } from "@/components/theme-provider"
 import { useDashboardStats } from "@/hooks/useDashboard"
@@ -143,6 +144,7 @@ function NavItem({
 
 // Desktop sidebar
 function DesktopSidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle: () => void }) {
+  const navigate = useNavigate()
   const location = useLocation()
 
   return (
@@ -158,10 +160,24 @@ function DesktopSidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle:
         className={`flex items-center h-14 px-3 border-b border-border ${collapsed ? "justify-center px-4" : "gap-2 px-4"}`}
       >
         {!collapsed && (
-          <span className="text-sm font-semibold tracking-tight text-foreground">FinSight</span>
+          <button
+            onClick={() => navigate("/")}
+            className="text-base font-normal tracking-tight text-foreground hover:opacity-80 transition-opacity cursor-pointer"
+            style={{ fontFamily: "'Fraunces', serif" }}
+            aria-label="Go to landing page"
+          >
+            FinSight
+          </button>
         )}
         {collapsed && (
-          <span className="text-xs font-bold text-foreground">FS</span>
+          <button
+            onClick={() => navigate("/")}
+            className="text-xs font-semibold text-foreground hover:opacity-80 transition-opacity cursor-pointer"
+            style={{ fontFamily: "'Fraunces', serif" }}
+            aria-label="Go to landing page"
+          >
+            FS
+          </button>
         )}
       </div>
 
@@ -218,6 +234,7 @@ function DesktopSidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle:
 
 // Mobile sidebar
 function MobileSidebar() {
+  const navigate = useNavigate()
   const location = useLocation()
   const [open, setOpen] = useState(false)
 
@@ -233,7 +250,14 @@ function MobileSidebar() {
       <SheetContent side="left" className="w-[240px] p-0 bg-sidebar border-r border-border">
         {/* Logo */}
         <div className="flex items-center gap-2 h-14 px-4 border-b border-border">
-          <span className="text-sm font-semibold tracking-tight text-foreground">FinSight</span>
+          <button
+            onClick={() => navigate("/")}
+            className="text-base font-normal tracking-tight text-foreground hover:opacity-80 transition-opacity cursor-pointer"
+            style={{ fontFamily: "'Fraunces', serif" }}
+            aria-label="Go to landing page"
+          >
+            FinSight
+          </button>
         </div>
 
         <nav className="flex-1 p-2 flex flex-col gap-0.5">
@@ -516,6 +540,7 @@ function Topbar({ onCommandOpen }: { onCommandOpen: () => void }) {
 export default function AppLayout() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
   const [commandOpen, setCommandOpen] = useState(false)
+  const location = useLocation()
 
   // Ctrl+K / Cmd+K shortcut
   const handleKeyDown = useCallback((e: KeyboardEvent) => {
@@ -540,10 +565,21 @@ export default function AppLayout() {
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         <Topbar onCommandOpen={() => setCommandOpen(true)} />
 
-        <main className="flex-1 overflow-y-auto">
-          <div className="h-full">
-            <Outlet />
-          </div>
+        <main className="flex-1 overflow-y-auto relative">
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={location.pathname}
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -4 }}
+              transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
+              className="h-full relative"
+            >
+              <div className="relative z-10">
+                <Outlet />
+              </div>
+            </motion.div>
+          </AnimatePresence>
         </main>
       </div>
 

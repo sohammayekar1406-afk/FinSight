@@ -136,6 +136,68 @@ export interface InvestigationEvidence {
   [key: string]: unknown
 }
 
+export interface EvidenceNode {
+  entityType: string
+  entityId: string
+  availability: string
+  relationshipToException: string
+  source: string
+  amount?: number
+  currency?: string
+  status?: string
+  timestamp?: string
+  relevanceReason?: string
+}
+
+export interface EvidenceGraph {
+  nodes: EvidenceNode[]
+  totalNodes: number
+  foundNodes: number
+  missingNodes: number
+  transactionFlow?: string
+}
+
+export interface EvidenceSufficiency {
+  sufficiencyScore: number
+  sufficiencyLevel?: string
+  assessment?: string
+  isSufficient?: boolean
+  criticalEvidenceMissing?: boolean
+  missingEvidenceTypes?: string[]
+  reasoning?: string
+  foundEvidence?: string[]
+  missingEvidence?: string[]
+}
+
+export interface RagHistoricalCase {
+  investigationId: string
+  exceptionId: string
+  exceptionType: string
+  severity: string
+  discrepancyAmount: number
+  previousRootCause: string
+  previousResolution: string
+  similarityScore: number
+  hybridRankScore: number
+}
+
+export interface ForensicHypothesis {
+  hypothesis: string
+  confidence: number
+  supportingEvidence: string[]
+  contradictingEvidence: string[]
+  status: string
+}
+
+export interface ForensicContradiction {
+  contradiction: string
+  evidenceA: string
+  evidenceB: string
+  severity: string
+  resolution: string
+  unresolved: boolean
+}
+
 export interface Investigation {
   exceptionId: string
   investigationId: string
@@ -149,6 +211,11 @@ export interface Investigation {
   analysisSource: string
   investigatedAt: string
   evidence: InvestigationEvidence | null
+  evidenceGraph?: EvidenceGraph | null
+  evidenceSufficiency?: EvidenceSufficiency | null
+  ragHistoricalCases?: RagHistoricalCase[]
+  hypotheses?: ForensicHypothesis[]
+  contradictions?: ForensicContradiction[]
 }
 
 export interface RunInvestigationsResult {

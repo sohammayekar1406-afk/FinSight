@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react"
-import { useDashboardStats } from "@/hooks/useDashboard"
+import { useTransactions, type TransactionItem } from "@/hooks/useTransactions"
 import {
   PageHeader,
   SectionCard,
@@ -31,7 +31,7 @@ import {
 } from "lucide-react"
 
 // Static mock transactions list to ensure render purity
-const MOCK_TRANSACTIONS = [
+const MOCK_TRANSACTIONS: TransactionItem[] = [
   { id: "tx_1001", orderId: "ord_1001", paymentId: "pay_1001", settlementId: "set_1001", amount: 1200.0, method: "CARD", status: "SETTLED", date: "2026-08-28T20:00:00Z" },
   { id: "tx_1002", orderId: "ord_1002", paymentId: "pay_1002", settlementId: "set_1002", amount: 1000.0, method: "UPI", status: "DISCREPANCY", date: "2026-08-28T19:00:00Z" },
   { id: "tx_1003", orderId: "ord_1003", paymentId: "pay_1003", settlementId: "set_1003", amount: 2000.0, method: "NETBANKING", status: "PARTIAL_REFUND", date: "2026-08-28T18:00:00Z" },
@@ -42,15 +42,22 @@ const MOCK_TRANSACTIONS = [
 ]
 
 export default function TransactionsPage() {
-  const { isLoading: isStatsLoading, isError, refetch } = useDashboardStats()
+  const { data: fetchedTransactions, isLoading, isError, refetch } = useTransactions()
 
   const [searchTerm, setSearchTerm] = useState("")
   const [statusFilter, setStatusFilter] = useState("ALL")
   const [page, setPage] = useState(0)
   const pageSize = 10
 
+  const allTransactions: TransactionItem[] = useMemo(() => {
+    if (Array.isArray(fetchedTransactions) && fetchedTransactions.length > 0) {
+      return fetchedTransactions
+    }
+    return MOCK_TRANSACTIONS
+  }, [fetchedTransactions])
+
   const filteredTransactions = useMemo(() => {
-    return MOCK_TRANSACTIONS.filter((tx) => {
+    return allTransactions.filter((tx) => {
       const matchesSearch =
         !searchTerm ||
         tx.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -61,7 +68,7 @@ export default function TransactionsPage() {
 
       return matchesSearch && matchesStatus
     })
-  }, [searchTerm, statusFilter])
+  }, [allTransactions, searchTerm, statusFilter])
 
   const paginatedTransactions = useMemo(() => {
     const start = page * pageSize
@@ -70,11 +77,11 @@ export default function TransactionsPage() {
 
   const totalPages = Math.ceil(filteredTransactions.length / pageSize) || 1
 
-  if (isStatsLoading) return <LoadingState message="Loading financial transaction ledger..." />
+  if (isLoading) return <LoadingState message="Loading financial transaction ledger..." />
   if (isError) return <ErrorState title="Unable to load transactions" onRetry={refetch} />
 
   return (
-    <div className="p-6 max-w-7xl mx-auto space-y-6">
+    <div className="p-6 md:p-8 max-w-7xl mx-auto space-y-8">
       {/* Top Header */}
       <PageHeader
         title="Transaction Ledger"
@@ -84,7 +91,7 @@ export default function TransactionsPage() {
             variant="outline"
             size="sm"
             onClick={() => refetch()}
-            className="text-xs border-border"
+            className="text-xs border-border/80 hover:bg-muted/60 hover:text-foreground transition-all duration-150"
           >
             <RefreshCw className="w-3.5 h-3.5 mr-1.5" />
             Refresh
@@ -93,7 +100,7 @@ export default function TransactionsPage() {
       />
 
       {/* Filter Controls Bar */}
-      <div className="p-4 rounded-xl border border-border bg-card flex flex-col md:flex-row items-stretch md:items-center gap-3">
+      <div className="p-4 rounded-xl border border-border/80 bg-card shadow-sm flex flex-col md:flex-row items-stretch md:items-center gap-3">
         <div className="relative flex-1">
           <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
           <Input
@@ -103,7 +110,7 @@ export default function TransactionsPage() {
               setSearchTerm(e.target.value)
               setPage(0)
             }}
-            className="pl-9 h-9 text-xs bg-muted/30 border-border"
+            className="pl-9 h-9 text-xs bg-muted/30 border-border/80 focus-visible:ring-1 focus-visible:ring-zinc-600"
           />
         </div>
 
@@ -115,7 +122,7 @@ export default function TransactionsPage() {
               setPage(0)
             }}
           >
-            <SelectTrigger className="w-[160px] h-9 text-xs bg-muted/30 border-border">
+            <SelectTrigger className="w-[160px] h-9 text-xs bg-muted/30 border-border/80">
               <Filter className="w-3 h-3 mr-1 text-muted-foreground" />
               <SelectValue placeholder="Status" />
             </SelectTrigger>
@@ -150,41 +157,41 @@ export default function TransactionsPage() {
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs border-collapse">
             <thead>
-              <tr className="border-b border-border bg-muted/30 text-muted-foreground font-medium">
+              <tr className="border-b border-border/80 bg-muted/40 text-muted-foreground/70 font-semibold uppercase tracking-wider text-[11px]">
                 <th className="py-3 px-4">Transaction ID</th>
                 <th className="py-3 px-4">Order ID</th>
                 <th className="py-3 px-4">Payment ID</th>
                 <th className="py-3 px-4">Settlement ID</th>
                 <th className="py-3 px-4">Method</th>
-                <th className="py-3 px-4">Amount</th>
+                <th className="py-3 px-4 text-right">Amount</th>
                 <th className="py-3 px-4">Ledger Status</th>
                 <th className="py-3 px-4">Timestamp</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-border">
+            <tbody className="divide-y divide-border/60">
               {paginatedTransactions.length > 0 ? (
                 paginatedTransactions.map((tx) => (
-                  <tr key={tx.id} className="hover:bg-muted/40 transition-colors">
+                  <tr key={tx.id} className="even:bg-muted/15 hover:bg-muted/35 transition-colors duration-150">
                     <td className="py-3.5 px-4 font-mono font-medium text-foreground">{tx.id}</td>
                     <td className="py-3.5 px-4 font-mono text-zinc-300">{tx.orderId}</td>
                     <td className="py-3.5 px-4 font-mono text-zinc-300">{tx.paymentId}</td>
                     <td className="py-3.5 px-4 font-mono text-zinc-400">{tx.settlementId || "—"}</td>
                     <td className="py-3.5 px-4">
-                      <Badge variant="outline" className="text-[10px]">
+                      <Badge variant="outline" className="text-[10px] bg-muted/50 border-border/70 text-zinc-300 font-mono">
                         {tx.method}
                       </Badge>
                     </td>
-                    <td className="py-3.5 px-4 font-mono font-semibold text-foreground">
+                    <td className="py-3.5 px-4 text-right font-mono font-semibold text-foreground">
                       {formatCurrency(tx.amount)}
                     </td>
                     <td className="py-3.5 px-4">
                       {tx.status === "SETTLED" ? (
-                        <span className="inline-flex items-center gap-1 text-emerald-400 font-medium">
-                          <CheckCircle2 className="w-3 h-3" /> SETTLED
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/25">
+                          <CheckCircle2 className="w-3 h-3 text-emerald-400" /> SETTLED
                         </span>
                       ) : (
-                        <span className="inline-flex items-center gap-1 text-amber-400 font-medium">
-                          <AlertTriangle className="w-3 h-3" /> {tx.status}
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-amber-500/10 text-amber-400 border border-amber-500/25">
+                          <AlertTriangle className="w-3 h-3 text-amber-400" /> {tx.status}
                         </span>
                       )}
                     </td>

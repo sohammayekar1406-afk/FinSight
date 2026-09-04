@@ -38,6 +38,7 @@ function RequireAuth() {
 // Public-only guard (redirects authed users to dashboard)
 function PublicOnly() {
   const { isAuthenticated, isLoading } = useAuth()
+  const location = useLocation()
 
   if (isLoading) {
     return (
@@ -47,7 +48,8 @@ function PublicOnly() {
     )
   }
 
-  if (isAuthenticated) {
+  // Allow authenticated users to access landing page, but redirect from login
+  if (isAuthenticated && location.pathname === "/login") {
     return <Navigate to="/dashboard" replace />
   }
 

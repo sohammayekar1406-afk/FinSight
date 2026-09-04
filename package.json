@@ -4,6 +4,7 @@
   "private": true,
   "description": "FinSight - AI-Powered Financial Reconciliation Platform",
   "scripts": {
+    "dev": "node -e \"console.error('\\n╔══════════════════════════════════════════════════════════════╗');console.error('║  FinSight is a single-server app — there is no root dev mode. ║');console.error('║  Run the FULL stack with:                                    ║');console.error('║    Windows:       .\\\\\\\\mvnw.cmd spring-boot:run              ║');console.error('║    Linux/macOS:   ./mvnw spring-boot:run                     ║');console.error('║  Then open:  http://localhost:8080                           ║');console.error('║                                                              ║');console.error('║  (Frontend-only HMR mode — requires backend at :8080):       ║');console.error('║    cd next-app && npm run dev:frontend-only                  ║');console.error('╚══════════════════════════════════════════════════════════════╝\\n');process.exit(1)\"",
     "build:frontend": "npm --prefix next-app install && npm --prefix next-app run build",
     "lint:frontend": "npm --prefix next-app run lint",
     "typecheck:frontend": "npm --prefix next-app run typecheck"

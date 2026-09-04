@@ -8,7 +8,7 @@ spring:
   datasource:
     url: ${SUPABASE_DB_URL:jdbc:postgresql://localhost:5432/finsight}
     username: ${SUPABASE_DB_USERNAME:postgres}
-    password: ${SUPABASE_DB_PASSWORD:postgres}
+    password: ${SUPABASE_DB_PASSWORD:changeme}
     driver-class-name: org.postgresql.Driver
     hikari:
       maximum-pool-size: 10
@@ -23,6 +23,7 @@ spring:
     show-sql: false
     properties:
       hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
         format_sql: false
 
 finsight:

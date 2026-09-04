@@ -31,6 +31,7 @@ function useScrollReveal() {
 
 declare global {
   interface Window {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     Hls: any;
   }
 }
@@ -38,10 +39,10 @@ declare global {
 export default function LandingPage() {
   const navigate = useNavigate()
   const { isAuthenticated } = useAuth()
-  
+
   // ── Scroll-reveal ──────────────────────────────────────────
   useScrollReveal()
-  
+
   // Accordion state — collapsed until the user clicks a card
   const [expandedCards, setExpandedCards] = useState<Record<number, boolean>>({})
 
@@ -52,7 +53,7 @@ export default function LandingPage() {
 
   // SVG lines state & ref
   const svgRef = useRef<SVGSVGElement | null>(null)
-  
+
   const toggleAccordion = (index: number) => {
     setExpandedCards(prev => ({
       ...prev,
@@ -188,7 +189,7 @@ export default function LandingPage() {
 
   return (
     <div className="antialiased selection:bg-white selection:text-black min-h-screen flex flex-col bg-[#0A0A0A] text-white font-sans">
-      
+
       {/* 1. TOP NAV */}
       <nav className="absolute top-0 left-0 w-full z-50 flex justify-between items-center px-8 md:px-16 py-6 bg-transparent">
         <Link to="/" className="font-headline-sm text-headline-sm font-bold text-white tracking-tight hover:opacity-90 transition-opacity">
@@ -208,7 +209,7 @@ export default function LandingPage() {
             <span className="absolute bottom-0 left-1/2 w-0 h-[1px] bg-white -translate-x-1/2 transition-all duration-250 ease-out group-hover:w-1/2"></span>
           </a>
         </div>
-        
+
         <div className="flex items-center space-x-4">
           {!isAuthenticated ? (
             <Link to="/login" className="font-body-md text-body-md text-white hover:opacity-80 transition-opacity">
@@ -219,7 +220,7 @@ export default function LandingPage() {
               Dashboard
             </Link>
           )}
-          <button 
+          <button
             onClick={() => isAuthenticated ? navigate("/dashboard") : navigate("/login")}
             className="bg-white text-black font-body-md text-body-md px-6 py-3 rounded-none hover:bg-zinc-200 transition-colors"
           >
@@ -229,29 +230,29 @@ export default function LandingPage() {
       </nav>
 
       <main className="flex-grow">
-        
+
         {/* 2. HERO SECTION */}
         <section id="product" className="relative w-full min-h-[90vh] py-24 pt-[160px] flex items-center justify-center overflow-hidden">
           {/* Background Video */}
           <div className="absolute inset-0 z-0 overflow-hidden">
-            <video 
-              autoPlay 
-              loop 
-              muted 
-              playsInline 
+            <video
+              autoPlay
+              loop
+              muted
+              playsInline
               className="absolute inset-0 w-full h-full object-cover opacity-[0.7]"
             >
               <source src="https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260806_133255_956f653f-5d80-4b06-abd5-0f46c98b60fa.mp4" type="video/mp4" />
             </video>
             {/* Gradient Overlay */}
-            <div 
-              className="absolute inset-0" 
+            <div
+              className="absolute inset-0"
               style={{
                 background: "linear-gradient(to bottom, transparent 60%, #0A0A0A 100%), linear-gradient(to right, rgba(0, 0, 0, 0.8) 0%, transparent 100%)"
               }}
             />
           </div>
-          
+
           {/* Hero Content */}
           <div className="relative z-20 max-w-7xl mx-auto px-6 md:px-16 w-full grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
             {/* TEXT (Left Column) */}
@@ -263,13 +264,13 @@ export default function LandingPage() {
                 FinSight reconciles orders, payments, and settlements automatically — and investigates discrepancies with AI-backed evidence.
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-start items-center reveal-item">
-                <button 
+                <button
                   onClick={() => isAuthenticated ? navigate("/dashboard") : navigate("/login")}
                   className="bg-white text-black font-body-md text-body-md px-8 py-4 min-w-[200px] text-center transition-all hover:bg-zinc-200"
                 >
                   Get Started
                 </button>
-                <button 
+                <button
                   onClick={() => setDemoOpen(true)}
                   className="bg-black/50 border border-white text-white font-body-md text-body-md px-8 py-4 min-w-[200px] text-center transition-all hover:bg-white hover:text-black backdrop-blur-sm"
                 >
@@ -277,11 +278,11 @@ export default function LandingPage() {
                 </button>
               </div>
             </div>
-            
+
             {/* DASHBOARD CARD (Right Column) */}
             <div className="hidden md:block reveal-item w-full relative z-10 pointer-events-none">
               <div className="relative w-full h-[450px] border border-[#262626] bg-[#0F0F0F]/80 backdrop-blur-md p-6 flex flex-col gap-6 shadow-[0_0_50px_rgba(255,255,255,0.1)] opacity-80 group">
-                
+
                 {/* Mock Dashboard Content */}
                 <div className="flex justify-between items-center border-b border-[#262626] pb-4">
                   <div className="font-data-md text-xs text-zinc-400 uppercase tracking-wider">Live Reconciliation</div>
@@ -290,7 +291,7 @@ export default function LandingPage() {
                     <span className="font-data-md text-xs text-white">System Active</span>
                   </div>
                 </div>
-                
+
                 {/* Mini KPI Row */}
                 <div className="grid grid-cols-2 gap-4">
                   <div className="p-4 border border-[#262626] bg-[#141414]">
@@ -303,7 +304,7 @@ export default function LandingPage() {
                     <div className="font-data-md text-xl text-red-400">3</div>
                   </div>
                 </div>
-                
+
                 {/* Small Bar Chart */}
                 <div className="h-24 flex items-end justify-between gap-2 px-2 reveal-item">
                   <div className="w-1/6 bg-white/20 h-1/3"></div>
@@ -313,7 +314,7 @@ export default function LandingPage() {
                   <div className="w-1/6 bg-white/20 h-1/4"></div>
                   <div className="w-1/6 bg-[#ef4444] h-2/3 animate-bar-shrink group-hover:scale-y-125 transition-transform duration-1000 ease-out"></div>
                 </div>
-                
+
                 {/* Mock Table Rows */}
                 <div className="flex flex-col gap-2">
                   <div className="flex justify-between items-center p-2 border-b border-[#262626]">
@@ -338,11 +339,11 @@ export default function LandingPage() {
         <section className="relative w-full h-auto py-40 flex items-center justify-center overflow-hidden">
           {/* Video Background */}
           <div className="absolute inset-0 z-0 overflow-hidden">
-            <video 
-              autoPlay 
-              loop 
-              muted 
-              playsInline 
+            <video
+              autoPlay
+              loop
+              muted
+              playsInline
               className="absolute inset-0 w-full h-full object-cover"
             >
               <source src="https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260418_115655_b4d9cd77-feed-43cd-a198-af78ebdf1f7a.mp4" type="video/mp4" />
@@ -350,27 +351,27 @@ export default function LandingPage() {
             {/* Gradient Overlay */}
             <div className="absolute inset-0 bg-gradient-to-b from-[#0A0A0A] from-10% via-[#0A0A0A]/40 via-50% to-[#0A0A0A] to-100%"></div>
           </div>
-          
+
           {/* Section Content */}
           <div className="relative z-10 max-w-7xl mx-auto px-6 md:px-16 text-center flex flex-col items-center justify-center w-full">
             {/* Circular Logo Mark */}
             <div className="w-12 h-12 rounded-full bg-white mb-8 reveal-item transition-all duration-700 ease-out opacity-100 translate-y-0"></div>
-            
+
             {/* Eyebrow */}
             <p className="font-label-caps text-label-caps text-zinc-400 mb-6 tracking-[0.2em] reveal-item">
               WHAT WE DO
             </p>
-            
+
             {/* Headline */}
             <h2 className="font-display-lg text-5xl md:text-7xl lg:text-[80px] text-white font-bold mb-10 reveal-item">
               FinSight
             </h2>
-            
+
             {/* Explainer */}
             <p className="font-body-md text-body-md md:text-body-lg text-zinc-400 max-w-[600px] mb-16 reveal-item">
               FinSight reconciles orders, payments, and settlements automatically, investigates every discrepancy with AI-backed evidence, and gives finance teams a clear, auditable trail from transaction to resolution.
             </p>
-            
+
             {/* Capabilities Row */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8 md:gap-16 max-w-5xl w-full mx-auto">
               <div className="text-center reveal-item">
@@ -393,7 +394,7 @@ export default function LandingPage() {
         <section id="features" className="relative py-32 bg-[#0A0A0A] overflow-hidden">
           <div className="relative z-10 max-w-7xl mx-auto px-6 md:px-16">
             <h2 className="font-display-lg text-5xl md:text-6xl text-white font-bold mb-16 text-center reveal-item">Precision at Scale</h2>
-            
+
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 justify-center">
               {/* CARD 1 (Static Visual Anchor) */}
               <div className="border border-zinc-800 bg-[#141414] p-6 flex flex-col justify-between relative min-h-[460px] feature-card">
@@ -423,7 +424,7 @@ export default function LandingPage() {
               </div>
 
               {/* CARD 2 */}
-              <div 
+              <div
                 className={`border border-zinc-800 bg-[#141414] p-6 flex flex-col justify-between cursor-pointer accordion-card feature-card relative min-h-[460px] ${expandedCards[1] ? "expanded-parent" : ""}`}
                 onClick={() => toggleAccordion(1)}
               >
@@ -447,7 +448,7 @@ export default function LandingPage() {
                     </div>
                   </div>
                 </div>
-                
+
                 <div className="mt-auto">
                   <div className="flex justify-between items-center mb-6">
                     <h3 className="font-display-lg text-white min-w-0 flex-1 pr-3">Multi-Way Matching</h3>
@@ -455,7 +456,7 @@ export default function LandingPage() {
                       <span className="material-symbols-outlined text-[16px]">add</span>
                     </span>
                   </div>
-                  
+
                   <div className={`accordion-content ${expandedCards[1] ? "expanded" : ""}`}>
                     <div className="accordion-inner flex flex-col gap-3">
                       <div className="stagger-item flex gap-3 items-start">
@@ -485,7 +486,7 @@ export default function LandingPage() {
               </div>
 
               {/* CARD 3 */}
-              <div 
+              <div
                 className={`border border-zinc-800 bg-[#141414] p-6 flex flex-col justify-between cursor-pointer accordion-card feature-card relative min-h-[460px] ${expandedCards[2] ? "expanded-parent" : ""}`}
                 onClick={() => toggleAccordion(2)}
               >
@@ -518,7 +519,7 @@ export default function LandingPage() {
                     </div>
                   </div>
                 </div>
-                
+
                 <div className="mt-auto">
                   <div className="flex justify-between items-center mb-6">
                     <h3 className="font-display-lg text-white min-w-0 flex-1 pr-3">Anomaly Detection</h3>
@@ -526,7 +527,7 @@ export default function LandingPage() {
                       <span className="material-symbols-outlined text-[16px]">add</span>
                     </span>
                   </div>
-                  
+
                   <div className={`accordion-content ${expandedCards[2] ? "expanded" : ""}`}>
                     <div className="accordion-inner flex flex-col gap-3">
                       <div className="stagger-item flex gap-3 items-start">
@@ -556,7 +557,7 @@ export default function LandingPage() {
               </div>
 
               {/* CARD 4 */}
-              <div 
+              <div
                 className={`border border-zinc-800 bg-[#141414] p-6 flex flex-col justify-between cursor-pointer accordion-card feature-card relative min-h-[460px] ${expandedCards[3] ? "expanded-parent" : ""}`}
                 onClick={() => toggleAccordion(3)}
               >
@@ -577,7 +578,7 @@ export default function LandingPage() {
                     <div className="font-data-md text-[10px] text-white/60 truncate">0x7f8c2...3a2e9f</div>
                   </div>
                 </div>
-                
+
                 <div className="mt-auto">
                   <div className="flex justify-between items-center mb-6">
                     <h3 className="font-display-lg text-white min-w-0 flex-1 pr-3">Immutable Audit</h3>
@@ -585,7 +586,7 @@ export default function LandingPage() {
                       <span className="material-symbols-outlined text-[16px]">add</span>
                     </span>
                   </div>
-                  
+
                   <div className={`accordion-content ${expandedCards[3] ? "expanded" : ""}`}>
                   <div className="accordion-inner flex flex-col gap-3">
                     <div className="stagger-item flex gap-3 items-start">
@@ -621,24 +622,24 @@ export default function LandingPage() {
         <section className="relative py-32 bg-[#0A0A0A] border-t border-zinc-850 overflow-hidden">
           {/* Video Background */}
           <div className="absolute inset-0 z-0 overflow-hidden">
-            <video 
-              autoPlay 
-              loop 
-              muted 
-              playsInline 
-              className="absolute inset-0 w-full h-full object-cover opacity-[0.7]" 
+            <video
+              autoPlay
+              loop
+              muted
+              playsInline
+              className="absolute inset-0 w-full h-full object-cover opacity-[0.7]"
               id="ui-video"
             />
             {/* Gradient Overlay */}
             <div className="absolute inset-0 bg-gradient-to-b from-[#0A0A0A] from-10% via-[#0A0A0A]/40 via-50% to-[#0A0A0A] to-100%"></div>
           </div>
-          
+
           <div className="relative z-10 max-w-7xl mx-auto px-8 md:px-16">
             <div className="text-center mb-16 reveal-item">
               <h2 className="font-display-lg text-4xl md:text-5xl text-white font-bold mb-6">Built for the moment something doesn't add up.</h2>
               <p className="font-body-lg text-zinc-400 max-w-2xl mx-auto">High-density data views combined with targeted AI analysis to resolve edge cases instantly.</p>
             </div>
-            
+
             <div className="border border-zinc-800 rounded-sm bg-[#0F0F0F] p-6 reveal-item">
               {/* Mock UI Header */}
               <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center border-b border-zinc-800 pb-4 mb-6 gap-4">
@@ -648,7 +649,7 @@ export default function LandingPage() {
                   <span className="font-data-md text-white bg-white/5 px-3 py-1 border border-zinc-800">Severity: High</span>
                 </div>
               </div>
-              
+
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 {/* Table Area */}
                 <div className="lg:col-span-2 border border-zinc-800 overflow-x-auto">
@@ -687,7 +688,7 @@ export default function LandingPage() {
                     </tbody>
                   </table>
                 </div>
-                
+
                 {/* AI Panel */}
                 <div className="border border-zinc-800 p-5 bg-[#111111]">
                   <div className="flex items-center gap-2 mb-4 pb-2 border-b border-zinc-800">
@@ -700,7 +701,7 @@ export default function LandingPage() {
                   <div className="font-data-md p-3 bg-black border border-zinc-800 text-zinc-400 mb-4">
                     Confidence: 98% (Rule: Cross-Border FX Fee)
                   </div>
-                  <button 
+                  <button
                     onClick={() => setDemoOpen(true)}
                     className="w-full bg-white text-black font-body-md py-2 hover:bg-zinc-200 transition-colors"
                   >
@@ -716,18 +717,18 @@ export default function LandingPage() {
         <section id="architecture" className="relative py-32 bg-[#0A0A0A] border-t border-zinc-850 overflow-hidden">
           {/* Video Background */}
           <div className="absolute inset-0 z-0 overflow-hidden">
-            <video 
-              autoPlay 
-              loop 
-              muted 
-              playsInline 
-              className="absolute inset-0 w-full h-full object-cover opacity-40" 
+            <video
+              autoPlay
+              loop
+              muted
+              playsInline
+              className="absolute inset-0 w-full h-full object-cover opacity-40"
               id="transition-video"
             />
             {/* Gradient Overlay */}
             <div className="absolute inset-0 bg-gradient-to-b from-[#0A0A0A] from-10% via-[#0A0A0A]/40 via-50% to-[#0A0A0A] to-100%"></div>
           </div>
-          
+
           <div className="relative z-10 max-w-7xl mx-auto px-8 md:px-16">
             {/* Header */}
             <div className="text-center mb-16 reveal-item">
@@ -753,11 +754,11 @@ export default function LandingPage() {
                 </li>
               </ul>
             </div>
-            
+
             {/* Horizontal Diagram */}
             <div className="relative w-full border border-zinc-800 bg-[#0F0F0F] p-6 reveal-item delay-200 mb-32 flex flex-col md:flex-row items-center justify-between gap-6 opacity-100 translate-y-0 overflow-hidden">
               <div className="absolute inset-0 bg-[radial-gradient(rgba(255,255,255,0.1)_1px,transparent_1px)] bg-[size:16px_16px] opacity-50 z-0"></div>
-              
+
               <div className="flex flex-col gap-3 relative z-10 w-full md:w-1/3">
                 <div className="p-3 border border-zinc-800 bg-[#141414] flex justify-between items-center rounded-sm">
                   <div className="flex items-center gap-2">
@@ -781,15 +782,15 @@ export default function LandingPage() {
                   <span className="font-data-md text-[10px] text-zinc-400">2.9k rows</span>
                 </div>
               </div>
-              
+
               <div className="hidden md:block flex-grow h-[1px] bg-zinc-800 relative z-10"></div>
-              
+
               <div className="p-4 border border-white bg-white text-black text-center shadow-[0_0_25px_rgba(255,255,255,0.4)] relative z-10 w-[140px] shrink-0 rounded-sm">
                 <div className="font-headline-sm text-sm font-bold leading-tight">FinSight<br />Inference<br />Model</div>
               </div>
-              
+
               <div className="hidden md:block flex-grow h-[1px] bg-zinc-800 relative z-10"></div>
-              
+
               <div className="p-4 border border-zinc-800 bg-black z-10 flex flex-col gap-2 shadow-xl w-full md:w-1/3 rounded-sm">
                 <div className="font-label-caps text-white text-[10px] tracking-widest border-b border-zinc-800 pb-2">OUTPUT INSIGHT</div>
                 <div className="font-data-md text-[10px] text-zinc-400 flex flex-col gap-1 mt-1">
@@ -800,15 +801,15 @@ export default function LandingPage() {
                 </div>
               </div>
             </div>
-            
+
             {/* Exception Types / What We Catch */}
             <div id="what-we-catch" className="relative reveal-item w-full max-w-5xl mx-auto h-auto min-h-[500px] md:h-[720px] lg:h-[760px] flex flex-col md:block items-center justify-center my-12">
               {/* SVG Background for connecting lines */}
-              <svg 
+              <svg
                 ref={svgRef}
-                className="hidden md:block absolute inset-0 w-full h-full pointer-events-none z-0" 
-                id="catch-lines-svg" 
-                preserveAspectRatio="none" 
+                className="hidden md:block absolute inset-0 w-full h-full pointer-events-none z-0"
+                id="catch-lines-svg"
+                preserveAspectRatio="none"
                 viewBox="0 0 1000 800"
               >
                 <defs>
@@ -1025,7 +1026,7 @@ export default function LandingPage() {
               onClick={() => setDemoOpen(false)}
               className="absolute inset-0 bg-black/80 backdrop-blur-sm"
             />
-            
+
             {/* Modal Dialog */}
             <motion.div
               initial={{ opacity: 0, scale: 0.95, y: 20 }}
@@ -1046,7 +1047,7 @@ export default function LandingPage() {
                 <Sparkles className="w-5 h-5 text-white" />
                 <span className="text-xs font-semibold text-white uppercase tracking-wider">Request Access</span>
               </div>
-              
+
               <h3 className="text-xl font-bold text-white mb-2">Experience FinSight</h3>
               <p className="text-sm text-zinc-400 mb-6">
                 See how FinSight reconciles transactions and resolves discrepancies in real time.

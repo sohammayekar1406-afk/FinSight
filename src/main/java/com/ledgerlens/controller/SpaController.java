@@ -52,6 +52,8 @@ public class SpaController {
         "/exceptions/**",
         "/investigations",
         "/investigations/**",
+        "/transactions",
+        "/transactions/**",
         "/audit-logs",
         "/settings",
         "/landing",

@@ -32,6 +32,64 @@ import {
   ChevronRight,
 } from "lucide-react"
 
+// Severity breakdown visualization component
+function SeverityBreakdown({ exceptions }: { exceptions: FinancialException[] }) {
+  const breakdown = useMemo(() => {
+    const counts = { CRITICAL: 0, HIGH: 0, MEDIUM: 0, LOW: 0 }
+    exceptions.forEach(exp => {
+      if (exp.severity in counts) counts[exp.severity as keyof typeof counts]++
+    })
+    const total = exceptions.length || 1
+    return {
+      CRITICAL: { count: counts.CRITICAL, percent: (counts.CRITICAL / total) * 100 },
+      HIGH: { count: counts.HIGH, percent: (counts.HIGH / total) * 100 },
+      MEDIUM: { count: counts.MEDIUM, percent: (counts.MEDIUM / total) * 100 },
+      LOW: { count: counts.LOW, percent: (counts.LOW / total) * 100 },
+    }
+  }, [exceptions])
+
+  return (
+    <div className="p-4 rounded-xl border border-border/80 bg-card/40 backdrop-blur-sm">
+      <div className="flex items-center justify-between mb-3">
+        <h3 className="text-xs font-semibold text-muted-foreground/70 uppercase tracking-wider">Severity Distribution</h3>
+        <span className="text-xs text-muted-foreground/60">{exceptions.length} total</span>
+      </div>
+      <div className="flex gap-1 h-2 rounded-full overflow-hidden bg-muted/30 mb-3">
+        {breakdown.CRITICAL.count > 0 && (
+          <div className="bg-rose-500 transition-all" style={{ width: `${breakdown.CRITICAL.percent}%` }} />
+        )}
+        {breakdown.HIGH.count > 0 && (
+          <div className="bg-orange-500 transition-all" style={{ width: `${breakdown.HIGH.percent}%` }} />
+        )}
+        {breakdown.MEDIUM.count > 0 && (
+          <div className="bg-amber-500 transition-all" style={{ width: `${breakdown.MEDIUM.percent}%` }} />
+        )}
+        {breakdown.LOW.count > 0 && (
+          <div className="bg-emerald-500 transition-all" style={{ width: `${breakdown.LOW.percent}%` }} />
+        )}
+      </div>
+      <div className="grid grid-cols-4 gap-3 text-xs">
+        <div className="flex flex-col items-center gap-1">
+          <span className="font-mono font-bold text-rose-400">{breakdown.CRITICAL.count}</span>
+          <span className="text-muted-foreground/60 text-[10px]">Critical</span>
+        </div>
+        <div className="flex flex-col items-center gap-1">
+          <span className="font-mono font-bold text-orange-400">{breakdown.HIGH.count}</span>
+          <span className="text-muted-foreground/60 text-[10px]">High</span>
+        </div>
+        <div className="flex flex-col items-center gap-1">
+          <span className="font-mono font-bold text-amber-400">{breakdown.MEDIUM.count}</span>
+          <span className="text-muted-foreground/60 text-[10px]">Medium</span>
+        </div>
+        <div className="flex flex-col items-center gap-1">
+          <span className="font-mono font-bold text-emerald-400">{breakdown.LOW.count}</span>
+          <span className="text-muted-foreground/60 text-[10px]">Low</span>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export default function ExceptionsPage() {
   const navigate = useNavigate()
   const { data: rawExceptions, isLoading, isError, refetch } = useExceptions()
@@ -97,7 +155,7 @@ export default function ExceptionsPage() {
   if (isError) return <ErrorState title="Unable to load exceptions" onRetry={refetch} />
 
   return (
-    <div className="p-6 max-w-7xl mx-auto space-y-6">
+    <div className="p-6 md:p-8 max-w-7xl mx-auto space-y-8">
       {/* Top Header */}
       <PageHeader
         title="Financial Exceptions"
@@ -107,13 +165,16 @@ export default function ExceptionsPage() {
             variant="outline"
             size="sm"
             onClick={() => refetch()}
-            className="text-xs border-border"
+            className="text-xs border-border/80 hover:bg-muted/60 hover:text-foreground transition-all duration-150"
           >
             <RefreshCw className="w-3.5 h-3.5 mr-1.5" />
             Refresh
           </Button>
         }
       />
+
+      {/* Severity Breakdown */}
+      <SeverityBreakdown exceptions={exceptions} />
 
       {/* Filter Controls Bar */}
       <div className="p-4 rounded-xl border border-border bg-card flex flex-col md:flex-row items-stretch md:items-center gap-3">
@@ -221,24 +282,24 @@ export default function ExceptionsPage() {
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs border-collapse">
             <thead>
-              <tr className="border-b border-border bg-muted/30 text-muted-foreground font-medium">
+              <tr className="border-b border-border/80 bg-muted/40 text-muted-foreground/70 font-semibold uppercase tracking-wider text-[11px]">
                 <th className="py-3 px-4">Exception ID</th>
                 <th className="py-3 px-4">Type</th>
                 <th className="py-3 px-4">Severity</th>
                 <th className="py-3 px-4">Status</th>
-                <th className="py-3 px-4">Expected</th>
-                <th className="py-3 px-4">Actual</th>
-                <th className="py-3 px-4">Discrepancy</th>
+                <th className="py-3 px-4 text-right">Expected</th>
+                <th className="py-3 px-4 text-right">Actual</th>
+                <th className="py-3 px-4 text-right">Discrepancy</th>
                 <th className="py-3 px-4">Detected At</th>
                 <th className="py-3 px-4 text-right">Action</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-border">
+            <tbody className="divide-y divide-border/60">
               {paginatedExceptions.length > 0 ? (
                 paginatedExceptions.map((exp) => (
                   <tr
                     key={exp.id || exp.exceptionId}
-                    className="hover:bg-muted/40 transition-colors cursor-pointer"
+                    className="even:bg-muted/15 hover:bg-muted/35 transition-colors duration-150 cursor-pointer"
                     onClick={() => navigate(`/exceptions/${exp.exceptionId}`)}
                   >
                     <td className="py-3.5 px-4 font-mono font-medium text-foreground">
@@ -253,13 +314,13 @@ export default function ExceptionsPage() {
                     <td className="py-3.5 px-4">
                       <StatusBadge status={exp.status} />
                     </td>
-                    <td className="py-3.5 px-4 font-mono text-zinc-300">
+                    <td className="py-3.5 px-4 text-right font-mono text-zinc-300">
                       {formatCurrency(exp.expectedAmount)}
                     </td>
-                    <td className="py-3.5 px-4 font-mono text-zinc-300">
+                    <td className="py-3.5 px-4 text-right font-mono text-zinc-300">
                       {formatCurrency(exp.actualAmount)}
                     </td>
-                    <td className="py-3.5 px-4 font-mono font-semibold text-amber-400">
+                    <td className="py-3.5 px-4 text-right font-mono font-semibold text-amber-400">
                       {formatCurrency(exp.discrepancyAmount)}
                     </td>
                     <td className="py-3.5 px-4 text-muted-foreground">
@@ -269,7 +330,7 @@ export default function ExceptionsPage() {
                       <Button
                         size="sm"
                         variant="outline"
-                        className="text-[11px] h-7 border-border hover:bg-muted hover:text-foreground transition-all"
+                        className="text-[11px] h-7 border-border/80 hover:bg-muted/60 hover:text-foreground transition-all duration-150"
                         onClick={(e: React.MouseEvent) => {
                           e.stopPropagation()
                           navigate(`/exceptions/${exp.exceptionId}`)

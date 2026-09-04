@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useState, useMemo } from "react"
 import { useAuditLogsPaged } from "@/hooks/useAuditLogs"
 import {
   PageHeader,
@@ -25,11 +25,20 @@ export default function AuditLogsPage() {
 
   const { data: pagedData, isLoading, isError, refetch } = useAuditLogsPaged(page, pageSize)
 
+  const auditLogs = useMemo(() => {
+    if (pagedData?.content && Array.isArray(pagedData.content)) {
+      return pagedData.content
+    }
+    if (Array.isArray(pagedData)) {
+      return pagedData
+    }
+    return []
+  }, [pagedData])
+
+  const totalPages = pagedData?.totalPages || 1
+
   if (isLoading) return <LoadingState message="Loading immutable audit trail logs..." />
   if (isError) return <ErrorState title="Unable to fetch audit logs" onRetry={refetch} />
-
-  const auditLogs = pagedData?.content || []
-  const totalPages = pagedData?.totalPages || 1
 
   return (
     <div className="p-6 max-w-7xl mx-auto space-y-6">
@@ -73,7 +82,7 @@ export default function AuditLogsPage() {
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs border-collapse">
             <thead>
-              <tr className="border-b border-border bg-muted/30 text-muted-foreground font-medium">
+              <tr className="border-b border-border bg-muted/30 text-muted-foreground/70 font-semibold uppercase tracking-wider text-[11px]">
                 <th className="py-3 px-4">Timestamp</th>
                 <th className="py-3 px-4">Action</th>
                 <th className="py-3 px-4">Entity Type</th>
@@ -85,7 +94,7 @@ export default function AuditLogsPage() {
             <tbody className="divide-y divide-border font-mono text-[11px]">
               {auditLogs.length > 0 ? (
                 auditLogs.map((log) => (
-                  <tr key={log.id} className="hover:bg-muted/40 transition-colors">
+                  <tr key={log.id} className="even:bg-muted/15 hover:bg-muted/35 transition-colors duration-150">
                     <td className="py-3 px-4 text-muted-foreground whitespace-nowrap">
                       {formatDate(log.createdAt)}
                     </td>

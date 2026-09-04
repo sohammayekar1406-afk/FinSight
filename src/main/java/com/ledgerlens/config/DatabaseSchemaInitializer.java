@@ -22,6 +22,19 @@ public class DatabaseSchemaInitializer {
                 jdbcTemplate.execute("UPDATE audit_logs SET merchant_id = 'merch_default' WHERE merchant_id IS NULL");
                 jdbcTemplate.execute("CREATE INDEX IF NOT EXISTS idx_audit_logs_merchant_created ON audit_logs (merchant_id, created_at)");
                 log.info("Successfully ensured audit_logs table has merchant_id column and index.");
+
+                // Ensure exceptions check constraints include all ExceptionType enum values (including CURRENCY_MISMATCH)
+                jdbcTemplate.execute("ALTER TABLE exceptions DROP CONSTRAINT IF EXISTS exceptions_exception_type_check");
+                jdbcTemplate.execute("ALTER TABLE exceptions ADD CONSTRAINT exceptions_exception_type_check CHECK (" +
+                        "exception_type IN ('AMOUNT_MISMATCH', 'MISSING_PAYMENT', 'MISSING_SETTLEMENT', 'UNEXPECTED_FEE', " +
+                        "'DUPLICATE_TRANSACTION', 'DELAYED_SETTLEMENT', 'DISCREPANT_REFUND', 'UNKNOWN_TRANSACTION', " +
+                        "'UNMATCHED_ADJUSTMENT', 'CURRENCY_MISMATCH', 'DATA_INCOMPLETE'))");
+                jdbcTemplate.execute("ALTER TABLE exceptions DROP CONSTRAINT IF EXISTS exceptions_type_check");
+                jdbcTemplate.execute("ALTER TABLE exceptions ADD CONSTRAINT exceptions_type_check CHECK (" +
+                        "type IN ('AMOUNT_MISMATCH', 'MISSING_PAYMENT', 'MISSING_SETTLEMENT', 'UNEXPECTED_FEE', " +
+                        "'DUPLICATE_TRANSACTION', 'DELAYED_SETTLEMENT', 'DISCREPANT_REFUND', 'UNKNOWN_TRANSACTION', " +
+                        "'UNMATCHED_ADJUSTMENT', 'CURRENCY_MISMATCH', 'DATA_INCOMPLETE'))");
+                log.info("Successfully ensured exceptions table check constraints cover all enum values for both columns.");
             } catch (Exception e) {
                 log.warn("DatabaseSchemaInitializer non-fatal error: {}", e.getMessage());
             }

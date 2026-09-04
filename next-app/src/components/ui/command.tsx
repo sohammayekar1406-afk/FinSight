@@ -1,16 +1,10 @@
 "use client"
 
 import * as React from "react"
+import { createPortal } from "react-dom"
 import { Command as CommandPrimitive } from "cmdk"
 
 import { cn } from "@/lib/utils"
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog"
 import {
   InputGroup,
   InputGroupAddon,
@@ -33,36 +27,78 @@ function Command({
   )
 }
 
+// CommandDialog — rendered via a plain portal overlay so the Command root is
+// always mounted in the React tree. This avoids the cmdk v1.x crash where
+// sub-parts (Input, List, Item) call useSyncExternalStore against the cmdk
+// context BEFORE the Command root has mounted inside a Base-UI Dialog portal.
 function CommandDialog({
-  title = "Command Palette",
-  description = "Search for a command to run...",
+  open,
+  onOpenChange,
   children,
   className,
-  showCloseButton = false,
-  ...props
-}: Omit<React.ComponentProps<typeof Dialog>, "children"> & {
-  title?: string
-  description?: string
-  className?: string
-  showCloseButton?: boolean
+}: {
+  open?: boolean
+  onOpenChange?: (open: boolean) => void
   children: React.ReactNode
+  className?: string
 }) {
-  return (
-    <Dialog {...props}>
-      <DialogHeader className="sr-only">
-        <DialogTitle>{title}</DialogTitle>
-        <DialogDescription>{description}</DialogDescription>
-      </DialogHeader>
-      <DialogContent
+  const containerRef = React.useRef<HTMLDivElement>(null)
+
+  // Auto-focus the cmdk input when the palette opens
+  React.useEffect(() => {
+    if (open && containerRef.current) {
+      const input = containerRef.current.querySelector<HTMLInputElement>("[cmdk-input]")
+      input?.focus()
+    }
+  }, [open])
+
+  // Close on Escape
+  React.useEffect(() => {
+    if (!open) return
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onOpenChange?.(false)
+    }
+    window.addEventListener("keydown", handler)
+    return () => window.removeEventListener("keydown", handler)
+  }, [open, onOpenChange])
+
+  if (typeof document === "undefined") return null
+
+  return createPortal(
+    <>
+      {/* Backdrop */}
+      <div
+        aria-hidden="true"
+        onClick={() => onOpenChange?.(false)}
         className={cn(
-          "top-1/3 translate-y-0 overflow-hidden rounded-xl! p-0",
+          "fixed inset-0 z-50 bg-black/10 backdrop-blur-xs transition-opacity duration-150",
+          open ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
+        )}
+      />
+
+      {/* Command palette panel — Command root is always mounted */}
+      <div
+        ref={containerRef}
+        role="dialog"
+        aria-modal="true"
+        aria-label="Command Palette"
+        className={cn(
+          "fixed left-1/2 top-1/3 z-50 w-full max-w-[calc(100%-2rem)] sm:max-w-sm",
+          "-translate-x-1/2 -translate-y-0",
+          "overflow-hidden rounded-xl bg-popover ring-1 ring-foreground/10 shadow-lg",
+          "transition-all duration-150",
+          open
+            ? "opacity-100 scale-100 pointer-events-auto"
+            : "opacity-0 scale-95 pointer-events-none",
           className
         )}
-        showCloseButton={showCloseButton}
       >
-        {children}
-      </DialogContent>
-    </Dialog>
+        <Command className="[&_[cmdk-group-heading]]:px-2 [&_[cmdk-group-heading]]:font-medium [&_[cmdk-group-heading]]:text-muted-foreground [&_[cmdk-group]:not([hidden])_~[cmdk-group]]:pt-0 [&_[cmdk-group]]:px-2 [&_[cmdk-input-wrapper]_svg]:h-5 [&_[cmdk-input-wrapper]_svg]:w-5 [&_[cmdk-input]]:h-12 [&_[cmdk-item]]:px-2 [&_[cmdk-item]]:py-3 [&_[cmdk-item]_svg]:h-5 [&_[cmdk-item]_svg]:w-5">
+          {children}
+        </Command>
+      </div>
+    </>,
+    document.body
   )
 }
 
