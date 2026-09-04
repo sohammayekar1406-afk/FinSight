@@ -73,7 +73,9 @@ export default function LandingPage() {
 
       group.innerHTML = ""
 
-      if (window.innerWidth < 768) {
+      // Only hide lines on truly mobile screens (below 640px = sm: breakpoint)
+      // This allows lines to render on tablets and desktops at all zoom levels
+      if (window.innerWidth < 640) {
         return
       }
 
@@ -138,21 +140,33 @@ export default function LandingPage() {
       })
     }
 
-    // Run on intersection observer or delay to ensure cards are rendered
-    const observer = new IntersectionObserver((entries) => {
+    // Run initial draw on intersection observer
+    const intersectionObserver = new IntersectionObserver((entries) => {
       if (entries[0].isIntersecting) {
         drawLines()
-        // Keep resize listener but disconnect observer once initial lines are drawn
-        observer.disconnect()
+        intersectionObserver.disconnect()
       }
     }, { threshold: 0.1 })
 
-    observer.observe(svg)
+    intersectionObserver.observe(svg)
 
+    // Add ResizeObserver to recalculate on any container size change (including zoom)
+    const resizeObserver = new ResizeObserver(() => {
+      // Debounce slightly to avoid excessive redraws during smooth zoom
+      requestAnimationFrame(() => {
+        drawLines()
+      })
+    })
+
+    resizeObserver.observe(svg)
+
+    // Keep window resize listener as fallback for older browsers
     window.addEventListener("resize", drawLines)
+
     return () => {
       window.removeEventListener("resize", drawLines)
-      observer.disconnect()
+      intersectionObserver.disconnect()
+      resizeObserver.disconnect()
     }
   }, [])
 
@@ -803,11 +817,11 @@ export default function LandingPage() {
             </div>
 
             {/* Exception Types / What We Catch */}
-            <div id="what-we-catch" className="relative reveal-item w-full max-w-5xl mx-auto h-auto min-h-[500px] md:h-[720px] lg:h-[760px] flex flex-col md:block items-center justify-center my-12">
+            <div id="what-we-catch" className="relative reveal-item w-full max-w-5xl mx-auto h-auto min-h-[500px] sm:h-[720px] lg:h-[760px] flex flex-col sm:block items-center justify-center my-12">
               {/* SVG Background for connecting lines */}
               <svg
                 ref={svgRef}
-                className="hidden md:block absolute inset-0 w-full h-full pointer-events-none z-0"
+                className="hidden sm:block absolute inset-0 w-full h-full pointer-events-none z-0"
                 id="catch-lines-svg"
                 preserveAspectRatio="none"
                 viewBox="0 0 1000 800"
@@ -837,7 +851,7 @@ export default function LandingPage() {
 
               {/* Centered Heading in Cursive/Script Serif Italic inside Circle Ring */}
               <div
-                className="hidden md:flex flex-col items-center justify-center absolute z-20 pointer-events-none rounded-full"
+                className="hidden sm:flex flex-col items-center justify-center absolute z-20 pointer-events-none rounded-full"
                 style={{ left: "50%", top: "50%", transform: "translate(-50%, -50%)", width: "180px", height: "180px", textAlign: "center" }}
               >
                 <h3 className="font-serif italic text-3xl lg:text-4xl text-white font-normal tracking-wide leading-[1.15] text-center drop-shadow-[0_4px_24px_rgba(0,0,0,1)] select-none">
@@ -846,15 +860,15 @@ export default function LandingPage() {
               </div>
 
               {/* Mobile Heading */}
-              <div className="block md:hidden text-center mb-6 w-full">
+              <div className="block sm:hidden text-center mb-6 w-full">
                 <h3 className="font-serif italic text-4xl text-white font-normal">What We Catch</h3>
               </div>
 
               {/* Radial Cards Container */}
-              <div className="relative w-full h-full md:absolute md:inset-0 grid grid-cols-1 sm:grid-cols-2 gap-3 md:block z-10">
+              <div className="relative w-full h-full sm:absolute sm:inset-0 grid grid-cols-1 gap-3 sm:block z-10">
                 {/* Card 01 - Top (270°) */}
                 <div
-                  className="catch-card p-3.5 hover:bg-white/5 transition-all flex flex-col gap-2 relative group bg-[#0A0A0A] border border-zinc-800 hover:border-zinc-500 rounded-md md:absolute md:w-[200px] lg:w-[215px] md:-translate-x-1/2 md:-translate-y-1/2 shadow-lg"
+                  className="catch-card p-3.5 hover:bg-white/5 transition-all flex flex-col gap-2 relative group bg-[#0A0A0A] border border-zinc-800 hover:border-zinc-500 rounded-md sm:absolute sm:w-[200px] lg:w-[215px] sm:-translate-x-1/2 sm:-translate-y-1/2 shadow-lg"
                   style={{ left: "50%", top: "15%" }}
                 >
                   <div className="flex items-center justify-between">
@@ -869,7 +883,7 @@ export default function LandingPage() {
 
                 {/* Card 02 - Top-Right (315°) */}
                 <div
-                  className="catch-card p-3.5 hover:bg-white/5 transition-all flex flex-col gap-2 relative group bg-[#0A0A0A] border border-zinc-800 hover:border-zinc-500 rounded-md md:absolute md:w-[200px] lg:w-[215px] md:-translate-x-1/2 md:-translate-y-1/2 shadow-lg"
+                  className="catch-card p-3.5 hover:bg-white/5 transition-all flex flex-col gap-2 relative group bg-[#0A0A0A] border border-zinc-800 hover:border-zinc-500 rounded-md sm:absolute sm:w-[200px] lg:w-[215px] sm:-translate-x-1/2 sm:-translate-y-1/2 shadow-lg"
                   style={{ left: "77%", top: "24%" }}
                 >
                   <div className="flex items-center justify-between">
@@ -884,7 +898,7 @@ export default function LandingPage() {
 
                 {/* Card 03 - Right (0°) */}
                 <div
-                  className="catch-card p-3.5 hover:bg-white/5 transition-all flex flex-col gap-2 relative group bg-[#0A0A0A] border border-zinc-800 hover:border-zinc-500 rounded-md md:absolute md:w-[200px] lg:w-[215px] md:-translate-x-1/2 md:-translate-y-1/2 shadow-lg"
+                  className="catch-card p-3.5 hover:bg-white/5 transition-all flex flex-col gap-2 relative group bg-[#0A0A0A] border border-zinc-800 hover:border-zinc-500 rounded-md sm:absolute sm:w-[200px] lg:w-[215px] sm:-translate-x-1/2 sm:-translate-y-1/2 shadow-lg"
                   style={{ left: "88%", top: "50%" }}
                 >
                   <div className="flex items-center justify-between">
@@ -899,7 +913,7 @@ export default function LandingPage() {
 
                 {/* Card 04 - Bottom-Right (45°) */}
                 <div
-                  className="catch-card p-3.5 hover:bg-white/5 transition-all flex flex-col gap-2 relative group bg-[#0A0A0A] border border-zinc-800 hover:border-zinc-500 rounded-md md:absolute md:w-[200px] lg:w-[215px] md:-translate-x-1/2 md:-translate-y-1/2 shadow-lg"
+                  className="catch-card p-3.5 hover:bg-white/5 transition-all flex flex-col gap-2 relative group bg-[#0A0A0A] border border-zinc-800 hover:border-zinc-500 rounded-md sm:absolute sm:w-[200px] lg:w-[215px] sm:-translate-x-1/2 sm:-translate-y-1/2 shadow-lg"
                   style={{ left: "77%", top: "76%" }}
                 >
                   <div className="flex items-center justify-between">
@@ -914,7 +928,7 @@ export default function LandingPage() {
 
                 {/* Card 05 - Bottom (90°) */}
                 <div
-                  className="catch-card p-3.5 hover:bg-white/5 transition-all flex flex-col gap-2 relative group bg-[#0A0A0A] border border-zinc-800 hover:border-zinc-500 rounded-md md:absolute md:w-[200px] lg:w-[215px] md:-translate-x-1/2 md:-translate-y-1/2 shadow-lg"
+                  className="catch-card p-3.5 hover:bg-white/5 transition-all flex flex-col gap-2 relative group bg-[#0A0A0A] border border-zinc-800 hover:border-zinc-500 rounded-md sm:absolute sm:w-[200px] lg:w-[215px] sm:-translate-x-1/2 sm:-translate-y-1/2 shadow-lg"
                   style={{ left: "50%", top: "85%" }}
                 >
                   <div className="flex items-center justify-between">
@@ -929,7 +943,7 @@ export default function LandingPage() {
 
                 {/* Card 06 - Bottom-Left (135°) */}
                 <div
-                  className="catch-card p-3.5 hover:bg-white/5 transition-all flex flex-col gap-2 relative group bg-[#0A0A0A] border border-zinc-800 hover:border-zinc-500 rounded-md md:absolute md:w-[200px] lg:w-[215px] md:-translate-x-1/2 md:-translate-y-1/2 shadow-lg"
+                  className="catch-card p-3.5 hover:bg-white/5 transition-all flex flex-col gap-2 relative group bg-[#0A0A0A] border border-zinc-800 hover:border-zinc-500 rounded-md sm:absolute sm:w-[200px] lg:w-[215px] sm:-translate-x-1/2 sm:-translate-y-1/2 shadow-lg"
                   style={{ left: "23%", top: "76%" }}
                 >
                   <div className="flex items-center justify-between">
@@ -944,7 +958,7 @@ export default function LandingPage() {
 
                 {/* Card 07 - Left (180°) */}
                 <div
-                  className="catch-card p-3.5 hover:bg-white/5 transition-all flex flex-col gap-2 relative group bg-[#0A0A0A] border border-zinc-800 hover:border-zinc-500 rounded-md md:absolute md:w-[200px] lg:w-[215px] md:-translate-x-1/2 md:-translate-y-1/2 shadow-lg"
+                  className="catch-card p-3.5 hover:bg-white/5 transition-all flex flex-col gap-2 relative group bg-[#0A0A0A] border border-zinc-800 hover:border-zinc-500 rounded-md sm:absolute sm:w-[200px] lg:w-[215px] sm:-translate-x-1/2 sm:-translate-y-1/2 shadow-lg"
                   style={{ left: "12%", top: "50%" }}
                 >
                   <div className="flex items-center justify-between">
@@ -959,7 +973,7 @@ export default function LandingPage() {
 
                 {/* Card 08 - Top-Left (225°) */}
                 <div
-                  className="catch-card p-3.5 hover:bg-white/5 transition-all flex flex-col gap-2 relative group bg-[#0A0A0A] border border-zinc-800 hover:border-zinc-500 rounded-md md:absolute md:w-[200px] lg:w-[215px] md:-translate-x-1/2 md:-translate-y-1/2 shadow-lg"
+                  className="catch-card p-3.5 hover:bg-white/5 transition-all flex flex-col gap-2 relative group bg-[#0A0A0A] border border-zinc-800 hover:border-zinc-500 rounded-md sm:absolute sm:w-[200px] lg:w-[215px] sm:-translate-x-1/2 sm:-translate-y-1/2 shadow-lg"
                   style={{ left: "23%", top: "24%" }}
                 >
                   <div className="flex items-center justify-between">
