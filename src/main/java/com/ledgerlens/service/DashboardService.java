@@ -25,6 +25,7 @@ public class DashboardService {
     private final SettlementRepository settlementRepository;
     private final FinancialExceptionRepository exceptionRepository;
     private final FinancialExceptionService exceptionService;
+    private final ReconciliationRunRepository reconciliationRunRepository;
     private final MerchantContext merchantContext;
 
     public DashboardService(
@@ -35,6 +36,7 @@ public class DashboardService {
             SettlementRepository settlementRepository,
             FinancialExceptionRepository exceptionRepository,
             FinancialExceptionService exceptionService,
+            ReconciliationRunRepository reconciliationRunRepository,
             MerchantContext merchantContext) {
         this.orderRepository = orderRepository;
         this.paymentRepository = paymentRepository;
@@ -43,6 +45,7 @@ public class DashboardService {
         this.settlementRepository = settlementRepository;
         this.exceptionRepository = exceptionRepository;
         this.exceptionService = exceptionService;
+        this.reconciliationRunRepository = reconciliationRunRepository;
         this.merchantContext = merchantContext;
     }
 
@@ -102,6 +105,14 @@ public class DashboardService {
 
         List<FinancialExceptionResponseDto> recentExceptions = exceptionService.getAllExceptions();
 
+        List<ReconciliationRun> runs = reconciliationRunRepository.findByIdempotencyKeyStartingWith(merchantId + ":");
+        boolean hasReconciled = !runs.isEmpty() || !exceptions.isEmpty();
+        java.time.OffsetDateTime lastReconciledAt = runs.stream()
+                .map(ReconciliationRun::getCreatedAt)
+                .filter(java.util.Objects::nonNull)
+                .max(java.util.Comparator.naturalOrder())
+                .orElse(null);
+
         return DashboardStatsDto.builder()
                 .totalTransactions(totalTransactions)
                 .successfulPayments(successfulPayments)
@@ -115,6 +126,8 @@ public class DashboardService {
                 .severityBreakdown(severityBreakdown)
                 .settlementOverview(settlementOverview)
                 .recentExceptions(recentExceptions)
+                .hasReconciled(hasReconciled)
+                .lastReconciledAt(lastReconciledAt)
                 .build();
     }
 }

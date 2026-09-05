@@ -8,4 +8,6 @@ import java.util.UUID;
 
 public interface ReconciliationRunRepository extends JpaRepository<ReconciliationRun, UUID> {
     Optional<ReconciliationRun> findByIdempotencyKey(String idempotencyKey);
+    java.util.List<ReconciliationRun> findByIdempotencyKeyStartingWith(String prefix);
+    long countByIdempotencyKeyStartingWith(String prefix);
 }

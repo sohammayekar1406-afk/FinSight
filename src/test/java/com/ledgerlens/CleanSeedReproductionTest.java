@@ -50,6 +50,9 @@ public class CleanSeedReproductionTest {
     @Autowired
     private com.ledgerlens.service.InvestigationService investigationService;
 
+    @Autowired
+    private com.ledgerlens.service.DashboardService dashboardService;
+
     @Test
     void testCleanSeedReproduction() {
         System.out.println("=== CLEAN SEED REPRODUCTION START ===");
@@ -147,11 +150,99 @@ public class CleanSeedReproductionTest {
                 investigationService.getInvestigation(secondException.getExceptionId());
             });
         }
+    }
 
-        // 8. Re-seed demo data - guarantees reset of all exceptions and investigations
-        seedDataService.seedDemoData();
+    @Test
+    void testCleanState_AndLifecycleTransitions() {
+        org.springframework.security.core.context.SecurityContextHolder.getContext().setAuthentication(
+                new org.springframework.security.authentication.UsernamePasswordAuthenticationToken(
+                        "admin", "N/A", java.util.List.of(new org.springframework.security.core.authority.SimpleGrantedAuthority("ROLE_ADMIN"))
+                )
+        );
+
+        // ==========================================
+        // STATE 1 — CLEAN DATABASE (0 DEMO RECORDS)
+        // ==========================================
+        seedDataService.clearDemoData();
+
+        assertThat(orderRepository.findByMerchantId("merchant_a")).isEmpty();
+        assertThat(paymentRepository.findByMerchantId("merchant_a")).isEmpty();
+        assertThat(refundRepository.findByMerchantId("merchant_a")).isEmpty();
+        assertThat(feeRepository.findByMerchantId("merchant_a")).isEmpty();
+        assertThat(adjustmentRepository.findByMerchantId("merchant_a")).isEmpty();
+        assertThat(settlementRepository.findByMerchantId("merchant_a")).isEmpty();
         assertThat(exceptionRepository.findByMerchantId("merchant_a")).isEmpty();
         assertThat(investigationRepository.findByException_MerchantId("merchant_a")).isEmpty();
         assertThat(embeddingRepository.findByMerchantId("merchant_a")).isEmpty();
+
+        com.ledgerlens.dto.DashboardStatsDto cleanStats = dashboardService.getDashboardStats();
+        assertThat(cleanStats.getTotalTransactions()).isEqualTo(0);
+        assertThat(cleanStats.getSuccessfulPayments()).isEqualTo(0);
+        assertThat(cleanStats.getTotalSettlements()).isEqualTo(0);
+        assertThat(cleanStats.getTotalSettlementsAmount()).isEqualByComparingTo(java.math.BigDecimal.ZERO);
+        assertThat(cleanStats.getUnreconciledAmount()).isEqualByComparingTo(java.math.BigDecimal.ZERO);
+        assertThat(cleanStats.getOpenExceptionsCount()).isEqualTo(0);
+        assertThat(cleanStats.isHasReconciled()).isFalse();
+
+        // ==========================================
+        // STATE 2 — AFTER "SEED DATA" ONLY
+        // ==========================================
+        seedDataService.seedDemoData();
+
+        assertThat(orderRepository.findByMerchantId("merchant_a")).isNotEmpty();
+        assertThat(paymentRepository.findByMerchantId("merchant_a")).isNotEmpty();
+        assertThat(settlementRepository.findByMerchantId("merchant_a")).isNotEmpty();
+        assertThat(refundRepository.findByMerchantId("merchant_a")).isNotEmpty();
+        assertThat(feeRepository.findByMerchantId("merchant_a")).isNotEmpty();
+
+        // Raw records exist, BUT 0 exceptions and 0 investigations!
+        assertThat(exceptionRepository.findByMerchantId("merchant_a")).isEmpty();
+        assertThat(investigationRepository.findByException_MerchantId("merchant_a")).isEmpty();
+        assertThat(embeddingRepository.findByMerchantId("merchant_a")).isEmpty();
+
+        com.ledgerlens.dto.DashboardStatsDto seededStats = dashboardService.getDashboardStats();
+        assertThat(seededStats.getTotalTransactions()).isGreaterThan(0);
+        assertThat(seededStats.getSuccessfulPayments()).isGreaterThan(0);
+        assertThat(seededStats.getTotalSettlements()).isGreaterThan(0);
+        assertThat(seededStats.getTotalSettlementsAmount()).isGreaterThan(java.math.BigDecimal.ZERO);
+        assertThat(seededStats.getOpenExceptionsCount()).isEqualTo(0);
+        assertThat(seededStats.getUnreconciledAmount()).isEqualByComparingTo(java.math.BigDecimal.ZERO);
+        assertThat(seededStats.isHasReconciled()).isFalse(); // MUST NOT claim reconciliation has run
+
+        // ==========================================
+        // STATE 3 — AFTER "RUN RECONCILIATION"
+        // ==========================================
+        com.ledgerlens.dto.ReconciliationResultDto reconResult = reconciliationService.reconcileAll();
+        assertThat(reconResult.getExceptionsCreated()).isGreaterThan(0);
+
+        java.util.List<com.ledgerlens.entity.FinancialException> exceptions = exceptionRepository.findByMerchantId("merchant_a");
+        assertThat(exceptions).isNotEmpty();
+        // Investigations must still be 0!
+        assertThat(investigationRepository.findByException_MerchantId("merchant_a")).isEmpty();
+
+        com.ledgerlens.dto.DashboardStatsDto reconStats = dashboardService.getDashboardStats();
+        assertThat(reconStats.isHasReconciled()).isTrue();
+        assertThat(reconStats.getOpenExceptionsCount()).isEqualTo(exceptions.size());
+        assertThat(reconStats.getUnreconciledAmount()).isGreaterThan(java.math.BigDecimal.ZERO);
+        // Settlements amount must match raw settlements dynamically
+        assertThat(reconStats.getTotalSettlementsAmount()).isEqualTo(seededStats.getTotalSettlementsAmount());
+
+        // ==========================================
+        // STATE 4 — AFTER EXPLICIT INVESTIGATION
+        // ==========================================
+        String exId = exceptions.get(0).getExceptionId();
+        com.ledgerlens.dto.InvestigationResponseDto invDto = investigationService.investigateException(exId);
+        assertThat(invDto).isNotNull();
+        assertThat(investigationRepository.findByException_MerchantId("merchant_a")).hasSize(1);
+
+        // ==========================================
+        // RESET BACK TO CLEAN STATE
+        // ==========================================
+        seedDataService.clearDemoData();
+        assertThat(orderRepository.findByMerchantId("merchant_a")).isEmpty();
+        assertThat(settlementRepository.findByMerchantId("merchant_a")).isEmpty();
+        assertThat(exceptionRepository.findByMerchantId("merchant_a")).isEmpty();
+        assertThat(investigationRepository.findByException_MerchantId("merchant_a")).isEmpty();
+        assertThat(dashboardService.getDashboardStats().isHasReconciled()).isFalse();
     }
 }

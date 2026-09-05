@@ -11,4 +11,9 @@ export const demoApi = {
     const { data } = await apiClient.post<DemoValidationReport>("/api/demo/validate")
     return data
   },
+
+  reset: async (): Promise<{ status: string; message: string }> => {
+    const { data } = await apiClient.post<{ status: string; message: string }>("/api/demo/reset")
+    return data
+  },
 }

@@ -38,25 +38,28 @@ export default function DashboardPage() {
   const derived = useMemo(() => {
     if (!stats || typeof stats !== "object") {
       return {
+        hasReconciled: false,
         unreconciled: 0,
-        matchRate: "0.0",
+        matchRate: "—",
         matchRateNum: 0,
         criticalCount: 0,
         highCount: 0,
       }
     }
 
+    const hasReconciled = Boolean(stats.hasReconciled)
     const totalSettled = Number(stats.totalSettlementsAmount) || 0
     const unreconciled = Number(stats.unreconciledAmount) || 0
     const reconciled = Math.max(0, totalSettled - unreconciled)
 
-    const matchRateNum = totalSettled > 0 ? (reconciled / totalSettled) * 100 : 0
-    const matchRate = matchRateNum.toFixed(1)
+    const matchRateNum = hasReconciled && totalSettled > 0 ? (reconciled / totalSettled) * 100 : 0
+    const matchRate = hasReconciled ? matchRateNum.toFixed(1) : "—"
 
     const criticalCount = stats.severityBreakdown?.CRITICAL ?? 0
     const highCount = stats.severityBreakdown?.HIGH ?? 0
 
     return {
+      hasReconciled,
       unreconciled,
       matchRate,
       matchRateNum,
@@ -80,7 +83,7 @@ export default function DashboardPage() {
   if (isLoading) return <LoadingState message="Loading dashboard statistics..." />
   if (isError || !stats) return <ErrorState title="Unable to load dashboard" onRetry={refetch} />
 
-  const { unreconciled, matchRate, matchRateNum, criticalCount, highCount } = derived
+  const { hasReconciled, unreconciled, matchRate, matchRateNum, criticalCount, highCount } = derived
 
   return (
     <div className="p-6 md:p-8 max-w-7xl mx-auto space-y-8">
@@ -126,46 +129,67 @@ export default function DashboardPage() {
 
         <MetricCard
           title="Match Rate"
-          value={`${matchRate}%`}
-          icon={<TrendingUp className={`w-4 h-4 ${matchRateNum >= 99 ? "text-emerald-400" : "text-amber-400"}`} />}
-          accentColor={matchRateNum >= 99 ? "text-emerald-400" : "text-amber-400"}
+          value={hasReconciled ? `${matchRate}%` : "—"}
+          icon={<TrendingUp className={`w-4 h-4 ${!hasReconciled ? "text-muted-foreground" : matchRateNum >= 99 ? "text-emerald-400" : "text-amber-400"}`} />}
+          accentColor={!hasReconciled ? "text-muted-foreground" : matchRateNum >= 99 ? "text-emerald-400" : "text-amber-400"}
           description={
-            <span className="flex items-center gap-1.5">
-              <span className={`w-1.5 h-1.5 rounded-full ${matchRateNum >= 99 ? "bg-emerald-400" : "bg-amber-400 animate-pulse"}`} />
-              <span className={matchRateNum >= 99 ? "text-emerald-400/90" : "text-amber-400 font-semibold"}>
-                {matchRateNum >= 99 ? "System operating nominally" : "Review recommended"}
+            hasReconciled ? (
+              <span className="flex items-center gap-1.5">
+                <span className={`w-1.5 h-1.5 rounded-full ${matchRateNum >= 99 ? "bg-emerald-400" : "bg-amber-400 animate-pulse"}`} />
+                <span className={matchRateNum >= 99 ? "text-emerald-400/90" : "text-amber-400 font-semibold"}>
+                  {matchRateNum >= 99 ? "System operating nominally" : "Review recommended"}
+                </span>
               </span>
-            </span>
+            ) : (
+              <span className="flex items-center gap-1.5">
+                <span className="w-1.5 h-1.5 rounded-full bg-muted-foreground/40" />
+                <span className="text-muted-foreground/80">Reconciliation not yet run</span>
+              </span>
+            )
           }
         />
 
         <MetricCard
           title="Unreconciled Amount"
-          value={formatCurrency(unreconciled)}
-          icon={<Layers className={`w-4 h-4 ${unreconciled > 0 ? "text-amber-400" : "text-emerald-400"}`} />}
-          accentColor={unreconciled > 0 ? "text-amber-400" : "text-emerald-400"}
+          value={hasReconciled ? formatCurrency(unreconciled) : "—"}
+          icon={<Layers className={`w-4 h-4 ${!hasReconciled ? "text-muted-foreground" : unreconciled > 0 ? "text-amber-400" : "text-emerald-400"}`} />}
+          accentColor={!hasReconciled ? "text-muted-foreground" : unreconciled > 0 ? "text-amber-400" : "text-emerald-400"}
           description={
-            <span className="flex items-center gap-1.5">
-              <span className={`w-1.5 h-1.5 rounded-full ${unreconciled > 0 ? "bg-amber-400 animate-pulse" : "bg-emerald-400"}`} />
-              <span className={unreconciled > 0 ? "text-amber-400 font-semibold" : "text-emerald-400/90"}>
-                {unreconciled > 0 ? "Requires attention" : "All transactions reconciled"}
+            hasReconciled ? (
+              <span className="flex items-center gap-1.5">
+                <span className={`w-1.5 h-1.5 rounded-full ${unreconciled > 0 ? "bg-amber-400 animate-pulse" : "bg-emerald-400"}`} />
+                <span className={unreconciled > 0 ? "text-amber-400 font-semibold" : "text-emerald-400/90"}>
+                  {unreconciled > 0 ? "Requires attention" : "All transactions reconciled"}
+                </span>
               </span>
-            </span>
+            ) : (
+              <span className="flex items-center gap-1.5">
+                <span className="w-1.5 h-1.5 rounded-full bg-muted-foreground/40" />
+                <span className="text-muted-foreground/80">Pending reconciliation run</span>
+              </span>
+            )
           }
         />
 
         <MetricCard
           title="Critical Exceptions"
-          value={criticalCount}
-          icon={<AlertTriangle className={`w-4 h-4 ${criticalCount > 0 ? "text-rose-400" : "text-emerald-400"}`} />}
-          accentColor={criticalCount > 0 ? "text-rose-400" : "text-emerald-400"}
+          value={hasReconciled ? criticalCount : 0}
+          icon={<AlertTriangle className={`w-4 h-4 ${!hasReconciled ? "text-muted-foreground" : criticalCount > 0 ? "text-rose-400" : "text-emerald-400"}`} />}
+          accentColor={!hasReconciled ? "text-muted-foreground" : criticalCount > 0 ? "text-rose-400" : "text-emerald-400"}
           description={
-            <span className="flex items-center gap-1.5">
-              <span className={`w-1.5 h-1.5 rounded-full ${criticalCount > 0 ? "bg-rose-500 animate-pulse" : "bg-emerald-400"}`} />
-              <span className={criticalCount > 0 ? "text-rose-400 font-semibold" : "text-emerald-400/90"}>
-                {criticalCount > 0 ? `${highCount} HIGH severity active` : "No critical issues"}
+            hasReconciled ? (
+              <span className="flex items-center gap-1.5">
+                <span className={`w-1.5 h-1.5 rounded-full ${criticalCount > 0 ? "bg-rose-500 animate-pulse" : "bg-emerald-400"}`} />
+                <span className={criticalCount > 0 ? "text-rose-400 font-semibold" : "text-emerald-400/90"}>
+                  {criticalCount > 0 ? `${highCount} HIGH severity active` : "No critical issues"}
+                </span>
               </span>
-            </span>
+            ) : (
+              <span className="flex items-center gap-1.5">
+                <span className="w-1.5 h-1.5 rounded-full bg-muted-foreground/40" />
+                <span className="text-muted-foreground/80">Reconciliation pending</span>
+              </span>
+            )
           }
         />
       </div>
@@ -176,7 +200,7 @@ export default function DashboardPage() {
         description="Multi-way transaction lineage audit status"
         actions={
           <Badge variant="outline" className="text-zinc-300 border-border/80 bg-muted/40 text-[10px] font-mono tracking-wide">
-            RULES A–H ACTIVE
+            {hasReconciled ? "RULES A–H ACTIVE" : "PENDING RECONCILIATION"}
           </Badge>
         }
       >

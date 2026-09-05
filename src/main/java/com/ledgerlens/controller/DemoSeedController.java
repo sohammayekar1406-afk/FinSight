@@ -22,4 +22,13 @@ public class DemoSeedController {
         SeedResponseDto response = seedDataService.seedDemoData();
         return ResponseEntity.ok(response);
     }
+
+    @PostMapping("/reset")
+    public ResponseEntity<java.util.Map<String, String>> resetDemoData() {
+        seedDataService.clearDemoData();
+        return ResponseEntity.ok(java.util.Map.of(
+                "status", "SUCCESS",
+                "message", "Demo financial data reset to clean state (0 records)"
+        ));
+    }
 }

@@ -14,6 +14,8 @@ const DEFAULT_STATS: DashboardStats = {
   severityBreakdown: { CRITICAL: 0, HIGH: 0, MEDIUM: 0, LOW: 0 },
   settlementOverview: { SETTLED: 0, DISCREPANT: 0, PENDING: 0 },
   recentExceptions: [],
+  hasReconciled: false,
+  lastReconciledAt: null,
 }
 
 export const dashboardApi = {
@@ -43,6 +45,8 @@ export const dashboardApi = {
       severityBreakdown: (stats.severityBreakdown as Record<string, number>) || { CRITICAL: 0, HIGH: 0, MEDIUM: 0, LOW: 0 },
       settlementOverview: (stats.settlementOverview as Record<string, number>) || { SETTLED: 0, DISCREPANT: 0, PENDING: 0 },
       recentExceptions: Array.isArray(stats.recentExceptions) ? (stats.recentExceptions as DashboardStats["recentExceptions"]) : [],
+      hasReconciled: Boolean(stats.hasReconciled),
+      lastReconciledAt: (stats.lastReconciledAt as string) || null,
     }
   },
 

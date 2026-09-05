@@ -29,4 +29,5 @@ public class ReconciliationRun {
     public ReconciliationRun(String idempotencyKey, String resultPayload) { this.idempotencyKey = idempotencyKey; this.resultPayload = resultPayload; }
     public String getIdempotencyKey() { return idempotencyKey; }
     public String getResultPayload() { return resultPayload; }
+    public OffsetDateTime getCreatedAt() { return createdAt; }
 }

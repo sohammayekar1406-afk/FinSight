@@ -28,8 +28,10 @@ public class SeedDataService {
     private final InvestigationRepository investigationRepository;
     private final HistoricalInvestigationEmbeddingRepository embeddingRepository;
     private final ReconciliationExecutionLockRepository reconciliationExecutionLockRepository;
+    private final AuditLogRepository auditLogRepository;
+    private final ReconciliationRunRepository reconciliationRunRepository;
 
-    public SeedDataService(OrderRepository orderRepository, PaymentRepository paymentRepository, RefundRepository refundRepository, FeeRepository feeRepository, AdjustmentRepository adjustmentRepository, SettlementRepository settlementRepository, com.ledgerlens.repository.MerchantRepository merchantRepository, com.ledgerlens.repository.MerchantSettingsRepository merchantSettingsRepository, com.ledgerlens.repository.AppUserRepository appUserRepository, FinancialExceptionRepository exceptionRepository, InvestigationRepository investigationRepository, HistoricalInvestigationEmbeddingRepository embeddingRepository, ReconciliationExecutionLockRepository reconciliationExecutionLockRepository) {
+    public SeedDataService(OrderRepository orderRepository, PaymentRepository paymentRepository, RefundRepository refundRepository, FeeRepository feeRepository, AdjustmentRepository adjustmentRepository, SettlementRepository settlementRepository, com.ledgerlens.repository.MerchantRepository merchantRepository, com.ledgerlens.repository.MerchantSettingsRepository merchantSettingsRepository, com.ledgerlens.repository.AppUserRepository appUserRepository, FinancialExceptionRepository exceptionRepository, InvestigationRepository investigationRepository, HistoricalInvestigationEmbeddingRepository embeddingRepository, ReconciliationExecutionLockRepository reconciliationExecutionLockRepository, AuditLogRepository auditLogRepository, ReconciliationRunRepository reconciliationRunRepository) {
         this.orderRepository = orderRepository;
         this.paymentRepository = paymentRepository;
         this.refundRepository = refundRepository;
@@ -43,10 +45,92 @@ public class SeedDataService {
         this.investigationRepository = investigationRepository;
         this.embeddingRepository = embeddingRepository;
         this.reconciliationExecutionLockRepository = reconciliationExecutionLockRepository;
+        this.auditLogRepository = auditLogRepository;
+        this.reconciliationRunRepository = reconciliationRunRepository;
+    }
+
+    @Transactional
+    public void clearDemoData() {
+        List<String> demoMerchants = List.of("merchant_a", "merchant_b");
+        for (String mId : demoMerchants) {
+            // 1. Delete Embeddings
+            List<Investigation> investigations = investigationRepository.findByException_MerchantId(mId);
+            for (Investigation inv : investigations) {
+                embeddingRepository.findByInvestigation_Id(inv.getId())
+                        .ifPresent(embeddingRepository::delete);
+            }
+            List<HistoricalInvestigationEmbedding> embeddings = embeddingRepository.findByMerchantId(mId);
+            if (!embeddings.isEmpty()) {
+                embeddingRepository.deleteAllInBatch(embeddings);
+            }
+
+            // 2. Delete Investigations
+            if (!investigations.isEmpty()) {
+                investigationRepository.deleteAllInBatch(investigations);
+            }
+
+            // 3. Delete Exceptions
+            List<FinancialException> exceptions = exceptionRepository.findByMerchantId(mId);
+            if (!exceptions.isEmpty()) {
+                exceptionRepository.deleteAllInBatch(exceptions);
+            }
+
+            // 4. Delete Fees
+            List<Fee> fees = feeRepository.findByMerchantId(mId);
+            if (!fees.isEmpty()) {
+                feeRepository.deleteAllInBatch(fees);
+            }
+
+            // 5. Delete Adjustments
+            List<Adjustment> adjustments = adjustmentRepository.findByMerchantId(mId);
+            if (!adjustments.isEmpty()) {
+                adjustmentRepository.deleteAllInBatch(adjustments);
+            }
+
+            // 6. Delete Refunds
+            List<Refund> refunds = refundRepository.findByMerchantId(mId);
+            if (!refunds.isEmpty()) {
+                refundRepository.deleteAllInBatch(refunds);
+            }
+
+            // 7. Delete Payments
+            List<Payment> payments = paymentRepository.findByMerchantId(mId);
+            if (!payments.isEmpty()) {
+                paymentRepository.deleteAllInBatch(payments);
+            }
+
+            // 8. Delete Settlements
+            List<Settlement> settlements = settlementRepository.findByMerchantId(mId);
+            if (!settlements.isEmpty()) {
+                settlementRepository.deleteAllInBatch(settlements);
+            }
+
+            // 9. Delete Orders
+            List<Order> orders = orderRepository.findByMerchantId(mId);
+            if (!orders.isEmpty()) {
+                orderRepository.deleteAllInBatch(orders);
+            }
+
+            // 10. Delete Audit Logs
+            List<AuditLog> logs = auditLogRepository.findByMerchantId(mId);
+            if (!logs.isEmpty()) {
+                auditLogRepository.deleteAllInBatch(logs);
+            }
+
+            // 11. Delete Reconciliation Runs
+            List<ReconciliationRun> runs = reconciliationRunRepository.findByIdempotencyKeyStartingWith(mId + ":");
+            if (!runs.isEmpty()) {
+                reconciliationRunRepository.deleteAllInBatch(runs);
+            }
+        }
+        reconciliationExecutionLockRepository.deleteAll();
     }
 
     @Transactional
     public SeedResponseDto seedDemoData() {
+        // Reset all prior demo data to guarantee a pristine baseline
+        clearDemoData();
+
         Merchant merchantA = merchantRepository.findByMerchantId("merchant_a").orElseGet(() -> merchantRepository.save(new Merchant("merchant_a", "Merchant A")));
         Merchant merchantB = merchantRepository.findByMerchantId("merchant_b").orElseGet(() -> merchantRepository.save(new Merchant("merchant_b", "Merchant B")));
         if (merchantSettingsRepository.findByMerchant_MerchantId("merchant_a").isEmpty()) merchantSettingsRepository.save(new MerchantSettings(merchantA, 24, new BigDecimal("0.0200"), new BigDecimal("0.01")));
@@ -57,30 +141,6 @@ public class SeedDataService {
         createUserIfAbsent("merchant_b_operator", merchantB, "OPERATOR");
         createUserIfAbsent("merchant_b_analyst", merchantB, "ANALYST");
         createUserIfAbsent("merchant_b_admin", merchantB, "ADMIN");
-
-        // CRITICAL: Clear any previous reconciliation exceptions, investigations, and embeddings
-        // for demo merchants to guarantee a pristine baseline with ZERO exceptions and ZERO investigations
-        // before reconciliation or explicit diagnosis is triggered.
-        List<String> demoMerchants = List.of("merchant_a", "merchant_b");
-        for (String mId : demoMerchants) {
-            List<Investigation> investigations = investigationRepository.findByException_MerchantId(mId);
-            for (Investigation inv : investigations) {
-                embeddingRepository.findByInvestigation_Id(inv.getId())
-                        .ifPresent(embeddingRepository::delete);
-            }
-            List<HistoricalInvestigationEmbedding> embeddings = embeddingRepository.findByMerchantId(mId);
-            if (!embeddings.isEmpty()) {
-                embeddingRepository.deleteAllInBatch(embeddings);
-            }
-            if (!investigations.isEmpty()) {
-                investigationRepository.deleteAllInBatch(investigations);
-            }
-            List<FinancialException> exceptions = exceptionRepository.findByMerchantId(mId);
-            if (!exceptions.isEmpty()) {
-                exceptionRepository.deleteAllInBatch(exceptions);
-            }
-        }
-        reconciliationExecutionLockRepository.deleteAll();
 
         List<String> ordersCreated = new ArrayList<>();
         List<String> paymentsCreated = new ArrayList<>();

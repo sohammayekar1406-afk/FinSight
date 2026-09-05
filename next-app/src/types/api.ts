@@ -84,6 +84,8 @@ export interface DashboardStats {
   severityBreakdown: Record<string, number>
   settlementOverview: Record<string, number>
   recentExceptions: FinancialException[]
+  hasReconciled?: boolean
+  lastReconciledAt?: string | null
 }
 
 // ---- Financial Exceptions ----

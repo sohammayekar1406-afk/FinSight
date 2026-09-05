@@ -18,10 +18,16 @@ public class DashboardStatsDto {
     private Map<String, Long> severityBreakdown;
     private Map<String, Long> settlementOverview;
     private List<FinancialExceptionResponseDto> recentExceptions;
+    private boolean hasReconciled;
+    private java.time.OffsetDateTime lastReconciledAt;
 
     public DashboardStatsDto() {}
 
     public DashboardStatsDto(long totalTransactions, long successfulPayments, long refundsCount, BigDecimal totalRefundsAmount, BigDecimal totalFeesAmount, long totalSettlements, BigDecimal totalSettlementsAmount, BigDecimal unreconciledAmount, long openExceptionsCount, Map<String, Long> severityBreakdown, Map<String, Long> settlementOverview, List<FinancialExceptionResponseDto> recentExceptions) {
+        this(totalTransactions, successfulPayments, refundsCount, totalRefundsAmount, totalFeesAmount, totalSettlements, totalSettlementsAmount, unreconciledAmount, openExceptionsCount, severityBreakdown, settlementOverview, recentExceptions, false, null);
+    }
+
+    public DashboardStatsDto(long totalTransactions, long successfulPayments, long refundsCount, BigDecimal totalRefundsAmount, BigDecimal totalFeesAmount, long totalSettlements, BigDecimal totalSettlementsAmount, BigDecimal unreconciledAmount, long openExceptionsCount, Map<String, Long> severityBreakdown, Map<String, Long> settlementOverview, List<FinancialExceptionResponseDto> recentExceptions, boolean hasReconciled, java.time.OffsetDateTime lastReconciledAt) {
         this.totalTransactions = totalTransactions;
         this.successfulPayments = successfulPayments;
         this.refundsCount = refundsCount;
@@ -34,6 +40,8 @@ public class DashboardStatsDto {
         this.severityBreakdown = severityBreakdown;
         this.settlementOverview = settlementOverview;
         this.recentExceptions = recentExceptions;
+        this.hasReconciled = hasReconciled;
+        this.lastReconciledAt = lastReconciledAt;
     }
 
     public static DashboardStatsDtoBuilder builder() { return new DashboardStatsDtoBuilder(); }
@@ -74,6 +82,12 @@ public class DashboardStatsDto {
     public List<FinancialExceptionResponseDto> getRecentExceptions() { return recentExceptions; }
     public void setRecentExceptions(List<FinancialExceptionResponseDto> recentExceptions) { this.recentExceptions = recentExceptions; }
 
+    public boolean isHasReconciled() { return hasReconciled; }
+    public void setHasReconciled(boolean hasReconciled) { this.hasReconciled = hasReconciled; }
+
+    public java.time.OffsetDateTime getLastReconciledAt() { return lastReconciledAt; }
+    public void setLastReconciledAt(java.time.OffsetDateTime lastReconciledAt) { this.lastReconciledAt = lastReconciledAt; }
+
     public static class DashboardStatsDtoBuilder {
         private long totalTransactions;
         private long successfulPayments;
@@ -87,6 +101,8 @@ public class DashboardStatsDto {
         private Map<String, Long> severityBreakdown = Map.of();
         private Map<String, Long> settlementOverview = Map.of();
         private List<FinancialExceptionResponseDto> recentExceptions = List.of();
+        private boolean hasReconciled;
+        private java.time.OffsetDateTime lastReconciledAt;
 
         public DashboardStatsDtoBuilder totalTransactions(long totalTransactions) { this.totalTransactions = totalTransactions; return this; }
         public DashboardStatsDtoBuilder successfulPayments(long successfulPayments) { this.successfulPayments = successfulPayments; return this; }
@@ -100,9 +116,11 @@ public class DashboardStatsDto {
         public DashboardStatsDtoBuilder severityBreakdown(Map<String, Long> severityBreakdown) { this.severityBreakdown = severityBreakdown; return this; }
         public DashboardStatsDtoBuilder settlementOverview(Map<String, Long> settlementOverview) { this.settlementOverview = settlementOverview; return this; }
         public DashboardStatsDtoBuilder recentExceptions(List<FinancialExceptionResponseDto> recentExceptions) { this.recentExceptions = recentExceptions; return this; }
+        public DashboardStatsDtoBuilder hasReconciled(boolean hasReconciled) { this.hasReconciled = hasReconciled; return this; }
+        public DashboardStatsDtoBuilder lastReconciledAt(java.time.OffsetDateTime lastReconciledAt) { this.lastReconciledAt = lastReconciledAt; return this; }
 
         public DashboardStatsDto build() {
-            return new DashboardStatsDto(totalTransactions, successfulPayments, refundsCount, totalRefundsAmount, totalFeesAmount, totalSettlements, totalSettlementsAmount, unreconciledAmount, openExceptionsCount, severityBreakdown, settlementOverview, recentExceptions);
+            return new DashboardStatsDto(totalTransactions, successfulPayments, refundsCount, totalRefundsAmount, totalFeesAmount, totalSettlements, totalSettlementsAmount, unreconciledAmount, openExceptionsCount, severityBreakdown, settlementOverview, recentExceptions, hasReconciled, lastReconciledAt);
         }
     }
 }

@@ -20,14 +20,34 @@ import {
   Sliders,
   Play,
   Lock,
+  RotateCcw,
 } from "lucide-react"
 
 export default function SettingsPage() {
   const { user } = useAuth()
   const queryClient = useQueryClient()
   const [seeding, setSeeding] = useState(false)
+  const [resetting, setResetting] = useState(false)
   const [validating, setValidating] = useState(false)
   const [validationReport, setValidationReport] = useState<Record<string, unknown> | null>(null)
+
+  const handleResetData = async () => {
+    setResetting(true)
+    try {
+      const res = await demoApi.reset()
+      queryClient.invalidateQueries()
+      toast.success(res.message || "Demo data reset to clean state (0 records)!")
+    } catch (err: unknown) {
+      const e = err as { response?: { status?: number; data?: { message?: string } }; message?: string }
+      if (e?.response?.status === 403) {
+        toast.error("Failed to reset demo data. Only ADMIN role can perform reset.")
+      } else {
+        toast.error(e?.response?.data?.message || e?.message || "Failed to reset demo data.")
+      }
+    } finally {
+      setResetting(false)
+    }
+  }
 
   const handleSeedData = async () => {
     setSeeding(true)
@@ -173,11 +193,22 @@ export default function SettingsPage() {
                 <Button
                   size="sm"
                   onClick={handleSeedData}
-                  disabled={seeding || user?.role !== "ADMIN"}
+                  disabled={seeding || resetting || user?.role !== "ADMIN"}
                   className="text-xs bg-foreground hover:bg-foreground/90 text-background font-medium"
                 >
                   <Database className="w-3.5 h-3.5 mr-1.5" />
                   {seeding ? "Seeding Data..." : "Seed 10 Demo Scenarios"}
+                </Button>
+
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={handleResetData}
+                  disabled={seeding || resetting || user?.role !== "ADMIN"}
+                  className="text-xs border-destructive/40 text-destructive hover:bg-destructive/10"
+                >
+                  <RotateCcw className="w-3.5 h-3.5 mr-1.5" />
+                  {resetting ? "Resetting..." : "Reset to Clean Slate (0 Records)"}
                 </Button>
 
                 <Button

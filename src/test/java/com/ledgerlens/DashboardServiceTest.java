@@ -35,6 +35,7 @@ class DashboardServiceTest {
     @Mock private SettlementRepository settlementRepository;
     @Mock private FinancialExceptionRepository exceptionRepository;
     @Mock private FinancialExceptionService exceptionService;
+    @Mock private ReconciliationRunRepository reconciliationRunRepository;
     @Mock private MerchantContext merchantContext;
 
     @InjectMocks
@@ -70,6 +71,7 @@ class DashboardServiceTest {
                 .build();
         when(exceptionRepository.findByMerchantId("merchant_a")).thenReturn(List.of(ex1));
         when(exceptionService.getAllExceptions()).thenReturn(List.of());
+        when(reconciliationRunRepository.findByIdempotencyKeyStartingWith("merchant_a:")).thenReturn(List.of());
 
         DashboardStatsDto stats = dashboardService.getDashboardStats();
 
