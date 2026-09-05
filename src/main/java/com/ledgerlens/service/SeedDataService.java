@@ -30,8 +30,11 @@ public class SeedDataService {
     private final ReconciliationExecutionLockRepository reconciliationExecutionLockRepository;
     private final AuditLogRepository auditLogRepository;
     private final ReconciliationRunRepository reconciliationRunRepository;
+    private final org.springframework.jdbc.core.JdbcTemplate jdbcTemplate;
+    @jakarta.persistence.PersistenceContext
+    private jakarta.persistence.EntityManager entityManager;
 
-    public SeedDataService(OrderRepository orderRepository, PaymentRepository paymentRepository, RefundRepository refundRepository, FeeRepository feeRepository, AdjustmentRepository adjustmentRepository, SettlementRepository settlementRepository, com.ledgerlens.repository.MerchantRepository merchantRepository, com.ledgerlens.repository.MerchantSettingsRepository merchantSettingsRepository, com.ledgerlens.repository.AppUserRepository appUserRepository, FinancialExceptionRepository exceptionRepository, InvestigationRepository investigationRepository, HistoricalInvestigationEmbeddingRepository embeddingRepository, ReconciliationExecutionLockRepository reconciliationExecutionLockRepository, AuditLogRepository auditLogRepository, ReconciliationRunRepository reconciliationRunRepository) {
+    public SeedDataService(OrderRepository orderRepository, PaymentRepository paymentRepository, RefundRepository refundRepository, FeeRepository feeRepository, AdjustmentRepository adjustmentRepository, SettlementRepository settlementRepository, com.ledgerlens.repository.MerchantRepository merchantRepository, com.ledgerlens.repository.MerchantSettingsRepository merchantSettingsRepository, com.ledgerlens.repository.AppUserRepository appUserRepository, FinancialExceptionRepository exceptionRepository, InvestigationRepository investigationRepository, HistoricalInvestigationEmbeddingRepository embeddingRepository, ReconciliationExecutionLockRepository reconciliationExecutionLockRepository, AuditLogRepository auditLogRepository, ReconciliationRunRepository reconciliationRunRepository, org.springframework.jdbc.core.JdbcTemplate jdbcTemplate) {
         this.orderRepository = orderRepository;
         this.paymentRepository = paymentRepository;
         this.refundRepository = refundRepository;
@@ -47,6 +50,7 @@ public class SeedDataService {
         this.reconciliationExecutionLockRepository = reconciliationExecutionLockRepository;
         this.auditLogRepository = auditLogRepository;
         this.reconciliationRunRepository = reconciliationRunRepository;
+        this.jdbcTemplate = jdbcTemplate;
     }
 
     @Transactional
@@ -54,76 +58,42 @@ public class SeedDataService {
         List<String> demoMerchants = List.of("merchant_a", "merchant_b");
         for (String mId : demoMerchants) {
             // 1. Delete Embeddings
-            List<Investigation> investigations = investigationRepository.findByException_MerchantId(mId);
-            for (Investigation inv : investigations) {
-                embeddingRepository.findByInvestigation_Id(inv.getId())
-                        .ifPresent(embeddingRepository::delete);
-            }
-            List<HistoricalInvestigationEmbedding> embeddings = embeddingRepository.findByMerchantId(mId);
-            if (!embeddings.isEmpty()) {
-                embeddingRepository.deleteAllInBatch(embeddings);
-            }
+            jdbcTemplate.update("DELETE FROM historical_investigation_embeddings WHERE merchant_id = ? OR investigation_id IN (SELECT i.id FROM investigations i JOIN exceptions e ON i.exception_id = e.id WHERE e.merchant_id = ?)", mId, mId);
 
             // 2. Delete Investigations
-            if (!investigations.isEmpty()) {
-                investigationRepository.deleteAllInBatch(investigations);
-            }
+            jdbcTemplate.update("DELETE FROM investigations WHERE exception_id IN (SELECT id FROM exceptions WHERE merchant_id = ?)", mId);
 
             // 3. Delete Exceptions
-            List<FinancialException> exceptions = exceptionRepository.findByMerchantId(mId);
-            if (!exceptions.isEmpty()) {
-                exceptionRepository.deleteAllInBatch(exceptions);
-            }
+            jdbcTemplate.update("DELETE FROM exceptions WHERE merchant_id = ?", mId);
 
             // 4. Delete Fees
-            List<Fee> fees = feeRepository.findByMerchantId(mId);
-            if (!fees.isEmpty()) {
-                feeRepository.deleteAllInBatch(fees);
-            }
+            jdbcTemplate.update("DELETE FROM fees WHERE merchant_id = ?", mId);
 
             // 5. Delete Adjustments
-            List<Adjustment> adjustments = adjustmentRepository.findByMerchantId(mId);
-            if (!adjustments.isEmpty()) {
-                adjustmentRepository.deleteAllInBatch(adjustments);
-            }
+            jdbcTemplate.update("DELETE FROM adjustments WHERE merchant_id = ?", mId);
 
             // 6. Delete Refunds
-            List<Refund> refunds = refundRepository.findByMerchantId(mId);
-            if (!refunds.isEmpty()) {
-                refundRepository.deleteAllInBatch(refunds);
-            }
+            jdbcTemplate.update("DELETE FROM refunds WHERE merchant_id = ?", mId);
 
             // 7. Delete Payments
-            List<Payment> payments = paymentRepository.findByMerchantId(mId);
-            if (!payments.isEmpty()) {
-                paymentRepository.deleteAllInBatch(payments);
-            }
+            jdbcTemplate.update("DELETE FROM payments WHERE merchant_id = ?", mId);
 
             // 8. Delete Settlements
-            List<Settlement> settlements = settlementRepository.findByMerchantId(mId);
-            if (!settlements.isEmpty()) {
-                settlementRepository.deleteAllInBatch(settlements);
-            }
+            jdbcTemplate.update("DELETE FROM settlements WHERE merchant_id = ?", mId);
 
             // 9. Delete Orders
-            List<Order> orders = orderRepository.findByMerchantId(mId);
-            if (!orders.isEmpty()) {
-                orderRepository.deleteAllInBatch(orders);
-            }
+            jdbcTemplate.update("DELETE FROM orders WHERE merchant_id = ?", mId);
 
             // 10. Delete Audit Logs
-            List<AuditLog> logs = auditLogRepository.findByMerchantId(mId);
-            if (!logs.isEmpty()) {
-                auditLogRepository.deleteAllInBatch(logs);
-            }
+            jdbcTemplate.update("DELETE FROM audit_logs WHERE merchant_id = ?", mId);
 
             // 11. Delete Reconciliation Runs
-            List<ReconciliationRun> runs = reconciliationRunRepository.findByIdempotencyKeyStartingWith(mId + ":");
-            if (!runs.isEmpty()) {
-                reconciliationRunRepository.deleteAllInBatch(runs);
-            }
+            jdbcTemplate.update("DELETE FROM reconciliation_runs WHERE idempotency_key LIKE ?", mId + ":%");
         }
-        reconciliationExecutionLockRepository.deleteAll();
+        jdbcTemplate.update("DELETE FROM reconciliation_execution_locks");
+        if (entityManager != null) {
+            entityManager.clear();
+        }
     }
 
     @Transactional
