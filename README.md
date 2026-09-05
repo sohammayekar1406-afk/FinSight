@@ -1,6 +1,6 @@
 # FinSight
 
-**AI-powered financial reconciliation and forensic exception investigation platform.**
+**AI Finance Controller — deterministic financial reconciliation with forensic AI exception investigation.**
 
 ---
 
@@ -20,19 +20,20 @@
 >
 > Login with `admin` / `admin123` (or `analyst` / `analyst123`, `operator` / `operator123`).
 >
-> FinSight is a **single-server app**. Spring Boot serves both the REST API and the React frontend from the same port 8080. There is no separate frontend server. **Do not use port 5173 to run the full app** — that port is a Vite HMR dev server used only for frontend-only development (see [Option B](#option-b-frontend-hmr-dev-mode-frontend-only-requires-backend-at-8080) below).
+> FinSight is a **single-server app**. Spring Boot serves both the REST API and the React frontend on port 8080. There is no separate frontend server. **Do not use port 5173 to evaluate the full application** — that port is a Vite HMR dev server for frontend-only development (see [Option B](#option-b--frontend-hmr-dev-mode-frontend-only-requires-backend-at-8080) below).
 
 ---
 
 ## 📌 Problem
 
-In modern payment gateway ecosystems (e.g., Razorpay, Stripe, Adyen), financial operations teams manage millions of transactions across fragmented systems: merchant orders, gateway authorization events, processor batches, refunds, interchange fee schedules, and bank disbursements.
+In modern payment gateway ecosystems (Razorpay, Stripe, Adyen), finance-operations teams manage millions of transactions across fragmented systems: merchant orders, gateway authorization events, processor batches, refunds, interchange fee schedules, and bank disbursements.
 
 Reconciliation at this scale suffers from critical operational bottlenecks:
+
 - **Timing Discrepancies**: Settlement delays (T+1 to T+3) trigger false alarms.
 - **Complex Fee Math**: Variable interchange percentages, GST, and chargeback debits create subtle balance shortfalls that spreadsheets cannot reliably detect.
-- **Investigation Fatigue**: When discrepancies occur, finance analysts spend hours manually assembling transaction records across disparate logs.
-- **Risk of LLM Hallucination**: Generic AI systems cannot be trusted with financial calculations because probabilistic models invent numbers, misstate balances, and fail compliance audits.
+- **Investigation Fatigue**: When discrepancies surface, analysts spend hours manually assembling records across disparate logs.
+- **LLM Hallucination Risk**: Generic AI systems cannot be trusted with financial calculations — probabilistic models invent numbers, misstate balances, and fail compliance audits.
 
 ---
 
@@ -40,141 +41,242 @@ Reconciliation at this scale suffers from critical operational bottlenecks:
 
 **FinSight** bridges deterministic financial engineering with safe, forensic AI:
 
-1. **Deterministic Reconciliation First**: An automated engine audits ingested ledgers against 8 mathematical rules (Rules A–H), computing exact ground-truth balance deltas.
-2. **Evidence Graph Aggregation**: Assembles connected transaction records (Order → Payment → Fees → Refunds → Settlement) into a structured graph with provenance tracking and deterministic sufficiency scoring.
-3. **pgvector Hybrid RAG**: Retrieves historical resolved precedents scoped strictly to the authenticated merchant using cosine similarity, recency decay, and severity weighting.
-4. **Advisory Forensic AI**: Google Gemini 1.5 Flash reasons over the verified evidence graph to formulate root-cause hypotheses, detect operational contradictions, and propose directed evidence requests.
-5. **Strict Financial Amount Validation**: A defensive backend validator checks all AI text against database ground truth. Any mismatched or hallucinated amount triggers an immediate fallback to a deterministic rule analyzer.
-6. **Human-in-the-Loop & Audit Logging**: Finance analysts review findings and authorize resolutions. Every event is captured in an immutable audit trail.
-
----
-
-## 🏛️ Key Architecture
-
 ```
-Transaction Data (Orders, Payments, Refunds, Fees, Settlements)
-                 │
-                 ▼
-     Deterministic Reconciliation (Rules A–H)
-                 │
-                 ▼
-        Financial Exceptions
-                 │
-                 ▼
-          Evidence Graph (Nodes, Provenance, Sufficiency Score)
-                 │
-                 ▼
-  Historical Retrieval + Hybrid RAG (pgvector 768-dim, Tenant-Scoped)
-                 │
-                 ▼
-    Gemini Forensic Investigation (Hypotheses, Contradictions, Requests)
-                 │
-                 ├── Fail-Safe / Amount Mismatch ──► Rule-Based Fallback
-                 ▼
-          Human Review (Analyst Verification & Resolution)
-                 │
-                 ▼
-           Audit Log (Immutable Database Ledger)
+Raw Financial Data (Orders, Payments, Refunds, Fees, Adjustments, Settlements)
+    │
+    ▼
+Deterministic Reconciliation (Rules A–H)
+    │
+    ▼
+Financial Exceptions
+    │
+    ▼
+Evidence Graph (Provenance + Sufficiency Score)
+    │
+    ▼
+Hybrid RAG (pgvector 768-dim, Merchant-Scoped)
+    │
+    ▼
+Gemini Forensic Investigation (Hypotheses, Contradictions, Directed Requests)
+    │
+    ├── Hallucination / Timeout / Amount Mismatch ──► Rule-Based Deterministic Fallback
+    ▼
+Human Review (Analyst Verification & Authorize Resolution)
+    │
+    ▼
+Audit Log (Immutable Database Ledger)
 ```
 
----
-
-## ⚡ Core Capabilities
-
-- **Deterministic Reconciliation**: Automated multi-way reconciliation across orders, payments, fees, refunds, adjustments, and settlements.
-- **Rules A–H Audit**: Complete coverage of standard payment gateway failure modes:
-  - `AMOUNT_MISMATCH` (Rule A)
-  - `MISSING_SETTLEMENT` (Rule B)
-  - `UNMATCHED_PAYMENT` (Rule C)
-  - `DUPLICATE_PAYMENT` (Rule D)
-  - `UNMATCHED_REFUND` (Rule E)
-  - `FEE_OVERCHARGE` (Rule F)
-  - `UNMATCHED_ADJUSTMENT` (Rule G)
-  - `CURRENCY_MISMATCH` (Rule H)
-- **Financial Evidence Aggregation**: Assembles multi-hop transaction lineages into verified evidence bundles.
-- **Evidence Graph**: Explicit node graph tracking entity provenance and availability (`FOUND`, `MISSING`, `NOT_APPLICABLE`, `UNAVAILABLE`).
-- **Evidence Sufficiency Scoring**: Deterministic 0–100 score indicating whether enough data exists for diagnosis.
-- **Historical Investigation Retrieval**: Vector-based semantic search over previously resolved cases.
-- **Hybrid pgvector RAG**: Combined vector cosine similarity, temporal recency decay, and severity matching.
-- **Forensic Hypotheses**: Root-cause diagnostic theories ranked by likelihood with supporting evidence references.
-- **Contradiction Reasoning**: Explicit identification of conflicting states across payment processor and bank records.
-- **Missing Evidence Detection**: Pinpoints absent records required to confirm root causes.
-- **Directed Evidence Requests**: Actionable instructions for operators to query specific counterparties (e.g. gateway ARN inquiries).
-- **Cross-Exception Correlation & Anomaly Detection**: Identifies shared attributes across discrepancies to detect systemic gateway failures.
-- **Strict Multi-Tenant Merchant Isolation**: ThreadLocal `MerchantContext` and unbypassable SQL predicates prevent cross-merchant leakage.
-- **Role-Based Access Control (RBAC)**: Method-level security (`OPERATOR`, `ANALYST`, `ADMIN`).
-- **AI Safety & Hallucination Defense**: Financial amount validator ensures AI never modifies or misstates monetary values.
-- **Human-in-the-Loop Resolution**: Required human authorization before closing exceptions.
-- **Immutable Audit Logging**: Tamper-evident logging of all reconciliations, investigations, and resolutions.
-- **Concurrency & Idempotency Protection**: Distributed execution locks per merchant and deduplicated exception generation.
-- **Incomplete-Data Handling**: Resilient execution when external gateway records are missing or partially synchronized.
+> ### **"Deterministic reconciliation is the financial source of truth. AI is an advisory investigation layer and never executes financial actions autonomously."**
 
 ---
 
-## 🛡️ AI Safety Principle
+## ⚡ Key Capabilities
 
-> ### **"You investigate money. You do not control money."**
+### Deterministic Reconciliation (Rules A–H)
+- **Rule A — `AMOUNT_MISMATCH`**: `Expected Settlement = Payment − Refunds − Fees ± Adjustments`. Flags exact delta when actual settlement differs.
+- **Rule B — `MISSING_SETTLEMENT`**: Success payment older than threshold with no linked settlement.
+- **Rule C — `UNMATCHED_PAYMENT`**: Gateway payment batch record has no matching internal order.
+- **Rule D — `DUPLICATE_PAYMENT`**: Multiple successful payments reference the same order.
+- **Rule E — `UNMATCHED_REFUND`**: Refund record exists with no corresponding successful payment.
+- **Rule F — `FEE_OVERCHARGE`**: Assessed fee exceeds contractual rate schedule.
+- **Rule G — `UNMATCHED_ADJUSTMENT`**: Manual adjustment lacks a valid audit authorization reference.
+- **Rule H — `CURRENCY_MISMATCH`**: Order, payment, or settlement records carry differing ISO currency codes.
 
-In FinSight:
-- **AI is strictly advisory**: The AI engine has zero write authority over financial ledgers, account balances, or settlement payouts.
-- **Deterministic ground truth remains authoritative**: Financial balances are calculated by deterministic code from database records.
-- **Fail-safe fallback**: If the external AI service times out, is disabled, returns invalid JSON, or fails amount validation, FinSight automatically routes to an internal rule-based diagnostic engine.
+### Evidence Graph
+- Multi-hop transaction lineage graph: `Order → Payment → Fees → Refunds → Settlement`
+- Node availability status: `FOUND`, `MISSING`, `NOT_APPLICABLE`, `UNAVAILABLE`
+- Deterministic sufficiency scoring (0–100) — computed without LLM involvement
+- Identifies missing evidence before AI is invoked
 
-For complete safety specifications, see [`docs/AI_SAFETY.md`](docs/AI_SAFETY.md).
+### AI Safety Architecture
+- **Advisory-only model**: AI has zero write authority over financial ledgers or settlement payouts
+- **Financial amount validator**: Compares every figure in AI output against database ground truth; hallucinated amounts trigger immediate deterministic fallback
+- **Fail-safe fallback**: Timeout, invalid JSON, disabled AI, or amount mismatch all route to internal rule-based diagnostic engine
+- **Prompt-injection sanitization**: Strips prompt delimiters, control characters, and markdown injection vectors from all RAG-retrieved content
+
+### Hybrid Historical RAG (pgvector)
+- **Embedding model**: Google `text-embedding-004` (768 dimensions, HNSW cosine index)
+- **Merchant-scoped retrieval**: `WHERE merchant_id = :merchantId` enforced at database level
+- **Hybrid ranking**: 50% semantic cosine similarity + 25% exception type match + 15% severity match + 10% amount magnitude proximity
+- **Cosine threshold**: 0.50 minimum similarity before case is injected into context
+- **Bounded context**: Maximum 3 historical precedents to prevent context dilution
+- **Graceful degradation**: Falls back to keyword lookup or pure Evidence Graph analysis if vector extension or embeddings are unavailable
+
+### Forensic Investigation (Gemini)
+- Competing root-cause hypotheses ranked by likelihood
+- Explicit contradiction detection across payment processor and bank records
+- Missing-evidence reasoning — pinpoints which records are absent to confirm root cause
+- Directed evidence requests — actionable operator instructions (e.g., specific ARN gateway queries)
+- Cross-exception correlation for systemic gateway failure patterns
+
+### Security & Isolation
+- **Multi-tenant merchant isolation**: ThreadLocal `MerchantContext` + mandatory `merchant_id` SQL predicates — no cross-merchant leakage at repository, security filter, or vector retrieval layers
+- **RBAC**: Method-level `@PreAuthorize` for `OPERATOR`, `ANALYST`, `ADMIN` roles
+- **Concurrency protection**: Pessimistic distributed row lock per merchant (`reconciliation_execution_lock`) prevents concurrent race conditions
+- **Exception deduplication**: SHA-256 composite key prevents stacked exceptions across repeated reconciliation runs
+- **Immutable audit trail**: Every reconciliation run, investigation, and resolution captured with actor, timestamp, and metadata
+- **Secrets via environment variables**: No credentials committed to version control
 
 ---
 
-## 🔍 Retrieval-Augmented Generation (RAG)
+## 🏛️ Architecture
 
-FinSight uses a specialized, closed-corpus RAG architecture:
-- **Embedding Model**: Google `text-embedding-004` (768 dimensions).
-- **768-Dimension HNSW Index**: Fast approximate nearest-neighbor search using cosine distance (`vector_cosine_ops`).
-- **Historical Resolved Cases**: Corpus contains only previously audited and resolved investigations.
-- **Merchant-Scoped Retrieval**: Strict database-level partition (`WHERE merchant_id = :merchantId`) guarantees zero cross-tenant precedent retrieval.
-- **Hybrid Ranking**: Composite scoring: 50% semantic similarity (cosine threshold ≥ 0.50) + 25% exception type match + 15% severity match + 10% amount magnitude closeness.
-- **Bounded Retrieval**: Maximum 3 historical precedents injected into context to prevent context dilution.
-- **Anti-Prompt-Injection Sanitization**: Strips prompt delimiters, control characters, and markdown injection vectors from retrieved notes.
-- **RAG Fallback**: Gracefully degrades to keyword lookup or pure Evidence Graph analysis if the vector extension or embeddings are unavailable.
+```
+┌──────────────────────────────────────────────────────────┐
+│                 React / Vite (SPA)                       │
+│     Dashboard · Exceptions · Evidence Graph · Audit      │
+└────────────────────────────┬─────────────────────────────┘
+                             │  HTTP / REST  (port 8080)
+┌────────────────────────────▼─────────────────────────────┐
+│               Spring Boot 3 (Embedded Tomcat)            │
+│   REST API · Security · RBAC · Merchant Context          │
+└────────────────────────────┬─────────────────────────────┘
+                             │
+             ┌───────────────┼───────────────┐
+             ▼               ▼               ▼
+┌────────────────┐  ┌────────────────┐  ┌────────────────┐
+│ Reconciliation │  │  Evidence Graph│  │  RAG / Gemini  │
+│  Engine (A–H)  │  │  + Sufficiency │  │  + Fallback    │
+└────────┬───────┘  └────────┬───────┘  └────────┬───────┘
+         │                   │                   │
+┌────────▼───────────────────▼───────────────────▼───────┐
+│      PostgreSQL (Supabase) + pgvector (768-dim HNSW)   │
+│    Financial ledger · Exception store · Audit log      │
+│    Historical investigation embeddings (tenant-scoped) │
+└────────────────────────────────────────────────────────┘
+                             │
+             ┌───────────────▼───────────────┐
+             │     Google Gemini 1.5 Flash   │
+             │  (text-embedding-004 + Flash) │
+             └───────────────────────────────┘
+```
 
-For full RAG technical details, see [`docs/RAG_ARCHITECTURE.md`](docs/RAG_ARCHITECTURE.md).
+### Evidence Graph → RAG Relationship
+
+1. `EvidenceCollectionService` assembles an Evidence Graph from database-verified records for the specific exception.
+2. `EvidenceGraphService` computes a deterministic sufficiency score (0–100) without AI involvement.
+3. Only after the Evidence Graph is complete does `SemanticHistoricalRetrievalService` retrieve up to 3 merchant-scoped precedents from pgvector.
+4. The Evidence Graph data + RAG precedents form the bounded, structured context passed to `GeminiAiInvestigationAnalyzer`.
+5. `FinancialAmountValidator` cross-checks all monetary figures in the AI response against the database; any mismatch triggers `RuleBasedInvestigationAnalyzer` as the authoritative fallback.
 
 ---
 
-## 💻 Tech Stack
+## 💻 Technology Stack
 
 | Domain | Technologies |
 | :--- | :--- |
 | **Backend** | Java 21, Spring Boot 3.3.3, Spring Security 6.x, Spring Data JPA, Hibernate, HikariCP |
 | **Frontend** | React 19, TypeScript, Vite 8, Tailwind CSS v4, shadcn/ui, TanStack Query v5, Lucide Icons |
-| **Database & Vector** | PostgreSQL (Supabase / local), pgvector extension (768-dim HNSW indexing), H2 (in-memory test isolation) |
-| **AI Layer** | Google Gemini 1.5 Flash API, Deterministic Rule Fallback Engine, Financial Amount Validator |
-| **Build & Tooling** | Maven 3.9 (with `frontend-maven-plugin` for unified packaging), Docker, Docker Compose |
+| **Database & Vector** | PostgreSQL (Supabase), pgvector extension (768-dim HNSW cosine index), H2 (in-memory test isolation) |
+| **AI Layer** | Google Gemini 1.5 Flash API (investigation), `text-embedding-004` (RAG embeddings), Deterministic Rule Fallback Engine, Financial Amount Validator |
+| **Build & Tooling** | Maven 3.9 with `frontend-maven-plugin` (unified packaging), Docker, Docker Compose |
 | **API Documentation** | OpenAPI 3.0, SpringDoc Swagger UI (`/swagger-ui/index.html`) |
+
+---
+
+## 🔄 Application Workflow
+
+The full lifecycle is a deliberate, explicit sequence:
+
+```
+1. Clean Slate          POST /api/demo/reset
+        │
+        ▼
+2. Seed Data            POST /api/demo/seed
+   (Creates: Orders, Payments, Fees, Refunds, Settlements)
+   (Does NOT create: Exceptions, Investigations, Embeddings)
+        │
+        ▼
+3. Run Reconciliation   POST /api/reconciliation/run
+   (Deterministic Rules A–H audit)
+   (Creates: Financial Exceptions with status=OPEN)
+   (Does NOT invoke AI investigation automatically)
+        │
+        ▼
+4. Financial Exceptions appear in Operations Dashboard
+   (Click any exception to view detail)
+        │
+        ▼
+5. Explicit Diagnose    POST /api/investigations/{exceptionId}
+   (User must explicitly click "Investigate Exception")
+   (Builds Evidence Graph → RAG retrieval → Gemini analysis)
+        │
+        ▼
+6. AI Investigation Report
+   (Hypotheses · Contradictions · Evidence Requests · Sufficiency Score)
+        │
+        ▼
+7. Human Review         POST /api/investigations/{exceptionId}/resolve
+   (Analyst reviews findings, authorizes resolution)
+        │
+        ▼
+8. Audit Log            GET /api/audit-logs
+   (Immutable record: actor, action, timestamp, metadata)
+```
+
+> **Important**: Seeding data does not create investigations. Reconciliation does not automatically invoke AI. Investigations require an explicit human-initiated `POST /api/investigations/{exceptionId}`.
+
+---
+
+## 🛡️ AI Safety
+
+> ### **"You investigate money. You do not control money."**
+
+FinSight enforces a hard architectural boundary between investigation and execution:
+
+- **AI is strictly advisory**: The AI engine generates forensic hypotheses and evidence requests. It cannot alter ledger balances, approve payouts, or bypass deterministic reconciliation rules.
+- **Deterministic ground truth is authoritative**: All financial amounts are computed by deterministic backend code from database records, never by an LLM.
+- **Amount validation is non-negotiable**: `FinancialAmountValidator` compares every monetary figure in AI-generated text against the database. If any figure mismatches by any amount, the entire AI response is discarded and `RuleBasedInvestigationAnalyzer` produces the authoritative diagnosis.
+- **Fail-closed reliability**: Any AI service failure (timeout, invalid JSON, disabled via config, network error) automatically activates the deterministic fallback — no operational disruption.
+- **Prompt-injection sanitization**: Retrieved RAG notes are sanitized before context injection to prevent jailbreak attempts via historical case content.
+
+For complete safety specifications, see [`docs/AI_SAFETY.md`](docs/AI_SAFETY.md).
+
+---
+
+## 🔍 RAG Architecture
+
+FinSight uses a specialized, closed-corpus, merchant-scoped RAG architecture:
+
+| Component | Specification |
+| :--- | :--- |
+| **Embedding Model** | Google `text-embedding-004` (768 dimensions) |
+| **Vector Index** | HNSW with `vector_cosine_ops` (fast approximate nearest-neighbor) |
+| **Corpus** | Only previously audited and resolved investigations for the authenticated merchant |
+| **Tenant Isolation** | `WHERE merchant_id = :merchantId` enforced at SQL layer — zero cross-tenant leakage |
+| **Hybrid Ranking** | 50% cosine similarity + 25% exception type match + 15% severity match + 10% amount magnitude |
+| **Similarity Threshold** | Minimum 0.50 cosine score before case is injected into context |
+| **Bounded Retrieval** | Maximum 3 historical precedents per investigation |
+| **Fallback** | Keyword lookup or pure Evidence Graph analysis if pgvector or embeddings are unavailable |
+
+For full RAG technical details, see [`docs/RAG_ARCHITECTURE.md`](docs/RAG_ARCHITECTURE.md).
 
 ---
 
 ## 🧪 Testing & Verification
 
-The FinSight repository is verified with an automated test suite across all architectural layers:
+Verified automated test suite across all architectural layers:
 
 ```
-Total Automated Tests:   138
-Failures:                 0
-Errors:                   0
-Skipped:                  0
-Test Suites (Classes):    25
-Build Status:             BUILD SUCCESS
+Total Automated Tests:    154
+Failures:                   0
+Errors:                     0
+Skipped:                    0
+Build Status:         BUILD SUCCESS
 ```
 
-### Verification Layer Breakdown:
-- **Deterministic Reconciliation (Rules A–H)**: Validates batch execution, edge-case math, and all 8 exception types.
-- **Security & Multi-Tenant Isolation**: Verifies RBAC method security and strict cross-tenant data separation.
-- **Evidence Graph & Sufficiency**: Tests graph assembly, edge provenance, and deterministic 0–100 scoring.
+### Verification Layer Breakdown
+
+- **Deterministic Reconciliation (Rules A–H)**: Batch execution, edge-case math, all 8 exception types.
+- **Security & Multi-Tenant Isolation**: RBAC method security, strict cross-tenant data separation, concurrent execution locks.
+- **Evidence Graph & Sufficiency**: Graph assembly, edge provenance, deterministic 0–100 scoring.
 - **AI Safety & Adversarial Defenses**: 14 tests validating prompt injection defense, malicious payloads, and financial amount validation.
-- **pgvector Hybrid RAG**: 22 tests verifying semantic retrieval, cosine similarity, merchant filtering, and fallback behavior.
-- **Synthetic Dataset Validation**: 10 tests running the reconciliation engine against large, randomized transaction datasets.
+- **pgvector Hybrid RAG**: Semantic retrieval, cosine similarity, merchant filtering, fallback behavior.
+- **Synthetic Dataset Validation**: Reconciliation engine against large, randomized transaction datasets (partial refunds, delayed settlements, split fees).
+- **Lifecycle Regression**: Verifies reconciliation does not auto-invoke investigation; investigations require explicit user action.
 
-*(Note: AI outputs are probabilistic by nature and are backed by deterministic amount validation and fail-safe rule fallbacks; we do not make unsupported claims of "100% AI accuracy".)*
+> AI outputs are probabilistic and guarded by deterministic amount validation and fail-safe rule fallback; no unsupported claims of "100% AI accuracy" are made.
 
 For complete testing details and suite breakdowns, see [`docs/TESTING.md`](docs/TESTING.md).
 
@@ -184,24 +286,25 @@ For complete testing details and suite breakdowns, see [`docs/TESTING.md`](docs/
 
 ### Prerequisites
 - **Java 21** or newer (`java -version`)
-- **Node.js 20+** (Optional: embedded Node 24 is automatically downloaded by Maven during package)
+- **Node.js 20+** *(optional — Maven auto-downloads Node 24 during package if not present)*
 
 ---
 
-### Option A — Single-Server Launch (The Standard Way)
+### Option A — Single-Server Launch *(Standard)*
 
-FinSight packages the React SPA directly into Spring Boot so both the API and the frontend are served from **one port, one URL**.
+FinSight packages the React SPA directly into Spring Boot — both API and frontend are served from **one port, one URL**.
 
 **Step 1 — Clone and configure**
 ```bash
 git clone https://github.com/sohammayekar1406-afk/FinSight.git
 cd FinSight
 
-# Copy the environment template (fill in Supabase credentials, or leave defaults for local PostgreSQL)
+# Copy the environment template
 cp .env.example .env
+# Edit .env: fill in your Supabase/PostgreSQL credentials and Gemini API key
 ```
 
-**Step 2 — Build the frontend into Spring Boot** *(required once, then only on frontend changes)*
+**Step 2 — Build frontend into Spring Boot** *(required once; repeat on frontend source changes)*
 ```bash
 # Windows
 .\mvnw.cmd clean package -DskipTests
@@ -219,28 +322,32 @@ cp .env.example .env
 ./mvnw spring-boot:run
 ```
 
-**Open: [`http://localhost:8080`](http://localhost:8080)** — this is the only URL for the full application.
+**Open: [`http://localhost:8080`](http://localhost:8080)**
 
 | Interface | URL |
 | :--- | :--- |
-| **Operations Dashboard** | **`http://localhost:8080/dashboard`** |
+| **Operations Dashboard** | `http://localhost:8080/dashboard` |
 | **Login Page** | `http://localhost:8080/login` |
 | **Swagger UI / OpenAPI** | `http://localhost:8080/swagger-ui/index.html` |
 | **Health Endpoint** | `http://localhost:8080/api/health` |
 
-Default credentials:
-- **admin** / `admin123`
-- **analyst** / `analyst123`
-- **operator** / `operator123`
+Default evaluation credentials:
+
+| Username | Password | Role |
+| :--- | :--- | :--- |
+| `admin` | `admin123` | Full access (reconciliation, investigation, resolution) |
+| `analyst` | `analyst123` | Operational access (investigate, approve, escalate) |
+| `operator` | `operator123` | Read-only (view exceptions, dashboard, audit logs) |
+| `merchant_b_admin` | `admin123` | Isolated tenant — cross-tenant isolation verification |
 
 ---
 
 ### Option B — Frontend HMR Dev Mode *(frontend-only — requires backend at :8080)*
 
 > [!WARNING]
-> **`http://localhost:5173` is NOT the full application.** It is a Vite hot-reload server that proxies `/api` to `http://localhost:8080`. If Spring Boot is not running at `:8080`, every API call returns **502 Bad Gateway** and the dashboard shows "Unable to load" errors.
+> **`http://localhost:5173` is NOT the full application.** It is a Vite hot-reload server that proxies `/api` to `http://localhost:8080`. If Spring Boot is not running at `:8080`, every API call returns **502 Bad Gateway**.
 >
-> Use this mode **only** when you are actively developing React components and need instant hot-module replacement. For all other use cases, use Option A.
+> Use this mode **only** when actively developing React components and needing instant hot-module replacement.
 
 ```bash
 # Terminal 1 — start the backend first (required)
@@ -252,20 +359,17 @@ npm install
 npm run dev:frontend-only
 ```
 
-The Vite dev server opens at `http://localhost:5173` and proxies all `/api/*` requests to the Spring Boot backend at `:8080`. Both processes must be running.
-
 ---
 
 ### Option C — Docker Deployment
+
 ```bash
-# Build and run with Docker Compose
 docker-compose up --build
 ```
 
-> **Note**: Production uses a persistent database — run `POST /api/demo/reset` after any manual testing to restore clean state before a live demo.
+> **Production testing note**: The production database is persistent. Run `POST /api/demo/reset` after any manual testing to restore clean state before a live demo.
 
 ---
-
 
 ## 📁 Project Structure
 
@@ -276,7 +380,7 @@ FinSight/
 ├── mvnw / mvnw.cmd                     # Maven wrapper scripts
 ├── .mvn/                               # Maven wrapper configuration
 ├── .gitignore                          # Git exclusions (build, logs, credentials)
-├── .env.example                        # Environment variables template
+├── .env.example                        # Environment variables template (no real secrets)
 ├── Dockerfile                          # Multi-stage production container build
 ├── docker-compose.yml                  # Container deployment specification
 │
@@ -286,12 +390,12 @@ FinSight/
 │   │   │   ├── FinSightApplication.java # Spring Boot main application class
 │   │   │   ├── config/                 # Security, CORS, AI, & DB configuration
 │   │   │   ├── controller/             # REST API controllers
-│   │   │   ├── dto/                    # Data transfer objects & schemas
+│   │   │   ├── dto/                    # Data transfer objects & API schemas
 │   │   │   ├── entity/                 # JPA entity domain model
 │   │   │   ├── exception/              # Global error handling
 │   │   │   ├── repository/             # Spring Data JPA repositories
 │   │   │   ├── security/               # RBAC filters & user services
-│   │   │   └── service/                # Reconciliation, Evidence Graph, RAG, & AI services
+│   │   │   └── service/                # Reconciliation, Evidence Graph, RAG & AI services
 │   │   │       ├── ai/                 # Gemini API client & FinancialAmountValidator
 │   │   │       ├── analyzer/           # Rule-based fallback analyzer
 │   │   │       └── rag/                # pgvector semantic retrieval & embeddings
@@ -300,7 +404,7 @@ FinSight/
 │   │       ├── db/migration/           # Flyway / pgvector SQL migrations
 │   │       └── static/                 # Production React assets (built by Maven)
 │   │
-│   └── test/java/com/ledgerlens/       # Automated test suite (25 classes, 138 tests)
+│   └── test/java/com/ledgerlens/       # Automated test suite (154 tests)
 │
 ├── next-app/                           # Frontend React SPA
 │   ├── package.json                    # Frontend dependencies & scripts
@@ -322,6 +426,77 @@ FinSight/
     ├── TESTING.md                      # Testing methodology & test suite breakdown
     └── DEMO_GUIDE.md                   # Step-by-step evaluator walkthrough
 ```
+
+---
+
+## 🎯 Demo Walkthrough for Evaluators
+
+```
+Step 1: POST /api/demo/reset         — Restore clean slate (0 transactions, 0 exceptions)
+Step 2: POST /api/demo/seed          — Seed 83 orders, 84 payments, 9 fees, 5 settlements
+Step 3: POST /api/reconciliation/run — Run deterministic Rules A–H audit
+         ↓ 4 deterministic exceptions created:
+         • CURRENCY_MISMATCH  (pay_hero_5)        ₹0.00 discrepancy
+         • UNEXPECTED_FEE     (fee_hero_2)         ₹62.00 discrepancy
+         • UNEXPECTED_FEE     (fee_hero_4)         ₹393.73 discrepancy
+         • AMOUNT_MISMATCH    (set_1002)           ₹500.00 discrepancy
+Step 4: Open any exception in the Exceptions page
+Step 5: Click "Investigate Exception" — Evidence Graph + RAG + Gemini analysis
+Step 6: Inspect Evidence Graph, Hypotheses, Contradictions, Directed Requests
+Step 7: Click "Resolve" / "Approve" — Human-in-the-loop review
+Step 8: Navigate to Audit Logs — Immutable record of all actions
+```
+
+---
+
+## 🏗️ Deployment Architecture
+
+Production runs as a unified deployment:
+
+```
+Railway (PaaS)
+    └── Spring Boot JAR
+         ├── REST API  (/api/*)
+         └── React SPA (/* → index.html)
+                │
+         Supabase PostgreSQL
+              ├── Financial ledger tables
+              ├── pgvector extension (768-dim HNSW)
+              └── Historical investigation embeddings
+                │
+         Google Gemini API
+              ├── gemini-1.5-flash  (forensic investigation)
+              └── text-embedding-004 (RAG embeddings)
+```
+
+**Production URL**: `https://finsight-production-f61a.up.railway.app`
+
+The production frontend is built with `npm run build` in `next-app/`, then synchronized into `src/main/resources/static/` during Maven packaging — serving both API and SPA from a single port (8080) with no separate frontend server or CDN required.
+
+---
+
+## 🔑 Environment Variables
+
+Configure via `.env` (local) or Railway environment settings (production). See [`.env.example`](.env.example) for all variable names.
+
+| Variable | Description |
+| :--- | :--- |
+| `SUPABASE_DB_URL` | PostgreSQL JDBC URL |
+| `SUPABASE_DB_USERNAME` | Database username |
+| `SUPABASE_DB_PASSWORD` | Database password |
+| `AI_ENABLED` | `true` to enable Gemini AI (`false` → deterministic fallback only) |
+| `AI_API_KEY` | Google Gemini API key |
+| `AI_MODEL` | AI model name (default: `gemini-1.5-flash`) |
+| `AI_TIMEOUT_MS` | AI request timeout in milliseconds |
+| `SECURITY_ADMIN_USERNAME` | Admin credential username |
+| `SECURITY_ADMIN_PASSWORD` | Admin credential password |
+| `SECURITY_ANALYST_USERNAME` | Analyst credential username |
+| `SECURITY_ANALYST_PASSWORD` | Analyst credential password |
+| `SECURITY_OPERATOR_USERNAME` | Operator credential username |
+| `SECURITY_OPERATOR_PASSWORD` | Operator credential password |
+| `FRONTEND_ORIGIN` | Allowed CORS origins (comma-separated) |
+
+> **Never commit real credentials.** All sensitive values must be supplied through environment variables or a secrets manager.
 
 ---
 

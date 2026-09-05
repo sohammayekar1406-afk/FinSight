@@ -8,15 +8,13 @@ FinSight features a comprehensive automated test suite designed to validate fina
 
 | Metric | Result |
 | :--- | :--- |
-| **Total Automated Tests** | **138** |
+| **Total Automated Tests** | **154** |
 | **Failures** | **0** |
 | **Errors** | **0** |
 | **Skipped** | **0** |
-| **Test Suites (Classes)** | **25** |
-| **Automated Test Pass Rate** | **100% (138/138 passing)** |
 | **Build Status** | **BUILD SUCCESS** |
 
-> **Note on Accuracy**: The 100% metric represents the pass rate of the automated regression suite verifying deterministic reconciliation, mathematical invariant checks, security boundaries, and fallback behavior. AI forensic reasoning is probabilistic by nature and guarded by the Financial Amount Validator and deterministic fallback engine.
+> **Note on Accuracy**: The 100% pass rate represents the automated regression suite verifying deterministic reconciliation, mathematical invariant checks, security boundaries, and fallback behavior. AI forensic reasoning is probabilistic by nature and guarded by the Financial Amount Validator and deterministic fallback engine.
 
 ---
 
@@ -48,12 +46,17 @@ Financial systems require strict separation between deterministic mathematical r
 ┌──────────────────────────────▼──────────────────────────────┐
 │           Layer 5: pgvector Hybrid RAG & Embeddings         │
 │  Cosine similarity, HNSW indexing, multi-tenant vector split│
+└──────────────────────────────┬──────────────────────────────┘
+                               │
+┌──────────────────────────────▼──────────────────────────────┐
+│        Layer 6: Lifecycle Regression & Demo Validation      │
+│  Reconciliation ≠ auto-investigate, seeding idempotency     │
 └─────────────────────────────────────────────────────────────┘
 ```
 
 ---
 
-## 3. Test Suite Breakdown (25 Suites / 138 Tests)
+## 3. Test Suite Breakdown (154 Tests)
 
 ### Layer 1: Core Deterministic Reconciliation Engine (Rules A–H)
 - **`ReconciliationServiceTest`** (4 tests):
@@ -68,9 +71,9 @@ Financial systems require strict separation between deterministic mathematical r
 ### Layer 2: Security, RBAC & Multi-Tenant Isolation
 - **`SecurityAuthorizationTest`** (5 tests):
   Tests Spring Security `@EnableMethodSecurity` role enforcement (`OPERATOR`, `ANALYST`, `ADMIN`).
-- **`MerchantIsolationIntegrationTest`** (5 tests):
+- **`MerchantIsolationIntegrationTest`** (8 tests):
   Guarantees that Merchant A cannot view, query, or resolve Merchant B's transactions or exceptions.
-- **`Phase3SecurityTest`** (5 tests):
+- **`Phase3SecurityTest`** (4 tests):
   Validates authentication filter, token validation, and unauthorized access rejections.
 - **`ReconciliationConcurrencyIntegrationTest`** (1 test):
   Validates atomic merchant execution locks (`reconciliation_execution_lock`) to prevent concurrent race conditions.
@@ -84,36 +87,40 @@ Financial systems require strict separation between deterministic mathematical r
 ### Layer 4: AI Forensic Reasoning & Financial Safety Bounds
 - **`AiInvestigationAnalyzerTest`** (5 tests):
   Validates structured JSON prompt generation, Gemini API integration, and schema parsing.
-- **`Phase3AiIntegrationTest`** (5 tests):
+- **`Phase3AiIntegrationTest`** (6 tests):
   Tests end-to-end AI investigation pipeline with mock response validation.
-- **`Phase3ForensicReasoningTest`** (10 tests):
+- **`Phase3ForensicReasoningTest`** (15 tests):
   Tests hypothesis generation, contradiction identification, missing evidence detection, and directed evidence requests.
-- **`Phase3AnomalyDetectionTest`** (6 tests):
+- **`Phase3AnomalyDetectionTest`** (3 tests):
   Tests pattern analysis across multiple transactions for soft operational anomalies.
-- **`Phase3HistoricalInvestigationTest`** (7 tests):
+- **`Phase3HistoricalInvestigationTest`** (5 tests):
   Tests historical precedent lookup and resolution pattern matching.
-- **`Phase4AdversarialAiTest`** (14 tests):
+- **`Phase4AdversarialAiTest`** (11 tests):
   Tests defense against adversarial prompt injection, currency manipulation, unauthorized instruction overrides, and hallucinated financial figures.
 - **`InvestigationServiceTest`** (6 tests):
   Tests investigation service orchestration, state persistence, and human review resolution.
 - **`InvestigationIntegrationTest`** (1 test):
   End-to-end integration test of investigation lifecycle.
 
-### Layer 5: Synthetic Dataset Validation (Phase 5)
-- **`Phase5SyntheticDatasetValidationTest`** (10 tests):
+### Layer 5: Synthetic Dataset Validation
+- **`Phase5SyntheticDatasetValidationTest`** (19 tests):
   Validates the reconciliation engine against large, randomized synthetic datasets representing real-world edge cases (partial refunds, delayed settlements, split fees).
 
-### Layer 6: pgvector Hybrid RAG & Vector Safety (Phase 6)
-- **`Phase6RagEvaluationTest`** (8 tests):
+### Layer 6: pgvector Hybrid RAG & Vector Safety
+- **`Phase6RagEvaluationTest`** (5 tests):
   Evaluates semantic retrieval accuracy, cosine similarity ordering, and hybrid reranking (semantic + recency + severity).
-- **`Phase6MerchantIsolationRagTest`** (4 tests):
+- **`Phase6MerchantIsolationRagTest`** (3 tests):
   Verifies that pgvector queries strictly enforce `WHERE merchant_id = ?`, preventing cross-tenant vector leakage.
-- **`Phase6AdversarialRagSafetyTest`** (6 tests):
+- **`Phase6AdversarialRagSafetyTest`** (3 tests):
   Tests prompt injection resistance on retrieved historical case notes.
 - **`Phase6RagFallbackTest`** (4 tests):
   Tests graceful degradation when vector database or embeddings are empty or unavailable.
 
-### Layer 7: Web API & Exception Handling
+### Layer 7: Lifecycle Regression & Demo Validation
+- **`ReconciliationDoesNotInvestigateTest`** (3 tests):
+  Verifies that running reconciliation never automatically invokes AI investigation — exceptions are created as `OPEN`, never auto-investigated.
+- **`CleanSeedReproductionTest`** and **`InvestigationAppearanceRegressionTest`**:
+  Lifecycle regression: clean → seed → reconcile → 4 deterministic exceptions → explicit investigate → 0 auto-investigations.
 - **`DashboardServiceTest`** (4 tests):
   Tests aggregation of KPI metrics, match rates, and active discrepancy totals.
 - **`GlobalExceptionHandlerTest`** (3 tests):
@@ -123,7 +130,7 @@ Financial systems require strict separation between deterministic mathematical r
 
 ## 4. Running the Test Suite Locally
 
-### Run All Backend Tests:
+### Run All Backend Tests
 ```bash
 # Windows
 .\mvnw.cmd test
@@ -132,16 +139,24 @@ Financial systems require strict separation between deterministic mathematical r
 ./mvnw test
 ```
 
-### Run a Specific Test Class:
+### Run a Specific Test Class
 ```bash
 # Example: Run the pgvector RAG evaluation tests
 .\mvnw.cmd test -Dtest=Phase6RagEvaluationTest
 
 # Example: Run AI safety & adversarial tests
 .\mvnw.cmd test -Dtest=Phase4AdversarialAiTest
+
+# Example: Verify reconciliation lifecycle separation
+.\mvnw.cmd test -Dtest=ReconciliationDoesNotInvestigateTest
 ```
 
-### Run Frontend Typecheck & Build Verification:
+### Skip Frontend During Backend Tests
+```bash
+.\mvnw.cmd test "-Dskip.frontend=true"
+```
+
+### Frontend Typecheck & Build Verification
 ```bash
 cd next-app
 npm run typecheck
