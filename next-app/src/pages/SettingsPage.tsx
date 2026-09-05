@@ -54,7 +54,11 @@ export default function SettingsPage() {
     try {
       const res = await demoApi.seed()
       queryClient.invalidateQueries()
-      toast.success(res.message || "Demo dataset seeded successfully!")
+      if (res.message?.includes("idempotent no-op")) {
+        toast.info(res.message)
+      } else {
+        toast.success(res.message || "Demo dataset seeded successfully!")
+      }
     } catch (err: unknown) {
       const e = err as { response?: { status?: number; data?: { message?: string } }; message?: string }
       if (e?.response?.status === 403) {
@@ -121,6 +125,14 @@ export default function SettingsPage() {
                 <Input value={user?.username || ""} disabled className="bg-muted/40 font-mono" />
               </div>
               <div className="space-y-1.5">
+                <Label>Active Tenant / Workspace</Label>
+                <Input
+                  value={user?.username.startsWith("merchant_b") ? "merchant_b (Row-Level Isolated Control)" : "merchant_a (Shared Demo Sandbox)"}
+                  disabled
+                  className="bg-muted/40 font-mono"
+                />
+              </div>
+              <div className="space-y-1.5">
                 <Label>Assigned Role</Label>
                 <div>
                   <Badge variant="outline" className="text-xs font-semibold text-muted-foreground border-border">
@@ -158,15 +170,15 @@ export default function SettingsPage() {
             <div className="space-y-4 text-xs max-w-lg">
               <div className="flex items-center justify-between p-3 rounded-lg border border-border bg-muted/30">
                 <div>
-                  <div className="font-semibold text-foreground">AI Investigation Layer</div>
-                  <div className="text-muted-foreground text-[11px]">Query Gemini 1.5 Flash for root cause diagnostics</div>
+                  <div className="font-semibold text-foreground">Rule-Based Deterministic Fallback</div>
+                  <div className="text-muted-foreground text-[11px]">Enforce offline heuristics if LLM times out</div>
                 </div>
                 <Switch defaultChecked disabled />
               </div>
               <div className="flex items-center justify-between p-3 rounded-lg border border-border bg-muted/30">
                 <div>
-                  <div className="font-semibold text-foreground">Deterministic Rule Fallback</div>
-                  <div className="text-muted-foreground text-[11px]">Automatic fallback if AI timeout or key absent</div>
+                  <div className="font-semibold text-foreground">AI Investigation Layer</div>
+                  <div className="text-muted-foreground text-[11px]">Query Gemini 1.5 Flash for root cause diagnostics</div>
                 </div>
                 <Switch defaultChecked disabled />
               </div>
@@ -185,11 +197,17 @@ export default function SettingsPage() {
         <TabsContent value="demo" className="space-y-6">
           <SectionCard title="Demo Controls & Seed Scenarios" description="Populate application database with 10 deterministic test cases">
             <div className="space-y-4">
-              <p className="text-xs text-muted-foreground">
-                Seeding creates idempotent order, payment, fee, refund, and settlement records covering 8 distinct exception types.
-              </p>
+              <div className="p-3.5 rounded-lg border border-border bg-muted/20 space-y-1.5">
+                <div className="flex items-center gap-2 text-xs font-medium text-foreground">
+                  <span className="w-2 h-2 rounded-full bg-emerald-400" />
+                  Active Tenant: {user?.username.startsWith("merchant_b") ? "Merchant B (Isolated Control)" : "Merchant A (Shared Demo Sandbox)"}
+                </div>
+                <p className="text-[11px] text-muted-foreground leading-relaxed">
+                  FinSight uses curated demo tenant environments for hackathon evaluation. Seeding creates idempotent order, payment, fee, refund, and settlement records covering deterministic exception scenarios. Calling seed when data already exists safely no-ops to prevent duplicates.
+                </p>
+              </div>
 
-              <div className="flex items-center gap-3">
+              <div className="flex flex-wrap items-center gap-3">
                 <Button
                   size="sm"
                   onClick={handleSeedData}

@@ -109,6 +109,18 @@ public class SeedDataService {
 
     @Transactional
     public SeedResponseDto seedDemoData() {
+        if (orderRepository.findByOrderId("ord_1001").isPresent()) {
+            return SeedResponseDto.builder()
+                    .message("Demo dataset is already seeded (idempotent no-op). Merchant data is preserved without duplicates. Use 'Reset to Clean Slate' before re-seeding.")
+                    .ordersCreated(List.of())
+                    .paymentsCreated(List.of())
+                    .refundsCreated(List.of())
+                    .feesCreated(List.of())
+                    .adjustmentsCreated(List.of())
+                    .settlementsCreated(List.of())
+                    .build();
+        }
+
         // Reset all prior demo data to guarantee a pristine baseline
         clearDemoData();
 

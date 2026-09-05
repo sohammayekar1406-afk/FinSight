@@ -463,6 +463,15 @@ function Topbar({ onCommandOpen }: { onCommandOpen: () => void }) {
           </DropdownMenuContent>
         </DropdownMenu>
 
+        {/* Workspace / Tenant badge */}
+        <div className="hidden md:flex items-center gap-1.5 px-2.5 py-1 rounded-md border border-border/60 bg-muted/30 text-[11px] font-mono">
+          <span className={`w-1.5 h-1.5 rounded-full ${user?.username.startsWith("merchant_b") ? "bg-amber-400" : "bg-emerald-400"}`} />
+          <span className="text-muted-foreground">Tenant:</span>
+          <span className="text-foreground font-semibold">
+            {user?.username.startsWith("merchant_b") ? "Merchant B" : "Merchant A (Demo)"}
+          </span>
+        </div>
+
         {/* Theme toggle */}
         <DropdownMenu>
           <DropdownMenuTrigger
@@ -505,14 +514,19 @@ function Topbar({ onCommandOpen }: { onCommandOpen: () => void }) {
               </Button>
             }
           />
-          <DropdownMenuContent align="end" className="w-48">
+          <DropdownMenuContent align="end" className="w-52">
             <DropdownMenuGroup>
               <DropdownMenuLabel className="font-normal">
                 <div className="flex flex-col gap-1">
                   <p className="text-sm font-medium">{user?.username}</p>
-                  <Badge variant="outline" className="text-[10px] w-fit">
-                    {user?.role}
-                  </Badge>
+                  <div className="flex items-center gap-1.5">
+                    <Badge variant="outline" className="text-[10px] w-fit">
+                      {user?.role}
+                    </Badge>
+                    <span className="text-[10px] text-muted-foreground font-mono">
+                      {user?.username.startsWith("merchant_b") ? "merchant_b" : "merchant_a (shared)"}
+                    </span>
+                  </div>
                 </div>
               </DropdownMenuLabel>
             </DropdownMenuGroup>

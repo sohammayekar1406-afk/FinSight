@@ -264,14 +264,27 @@ function SignInPanel({
   return (
     <div className="flex flex-col h-full justify-center p-14 xl:p-16">
       {/* Heading */}
-      <div className="mb-10">
-        <p className="font-mono text-[10px] tracking-[0.14em] text-white/30 uppercase mb-3">
+      <div className="mb-6">
+        <p className="font-mono text-[10px] tracking-[0.14em] text-white/30 uppercase mb-2">
           Financial Intelligence Platform
         </p>
         <h2 className="login-display-heading">Sign In</h2>
-        <p className="font-mono text-[12px] text-white/30 mt-2">
-          Access your reconciliation dashboard.
+        <p className="font-mono text-[11px] text-white/40 mt-1">
+          Demo Sandbox: Connects to shared demo workspace <span className="text-emerald-400 font-mono">Merchant A</span>.
         </p>
+      </div>
+
+      {/* Preset credentials callout */}
+      <div className="mb-6 p-3 rounded-lg border border-white/10 bg-white/[0.03] space-y-1.5 font-mono text-[11px]">
+        <div className="text-white/60 text-[10px] uppercase tracking-wider">Demo Evaluator Accounts:</div>
+        <div className="flex flex-wrap gap-2 text-white/80 text-[11px]">
+          <span className="px-1.5 py-0.5 rounded bg-white/5 border border-white/10">admin / admin123</span>
+          <span className="px-1.5 py-0.5 rounded bg-white/5 border border-white/10">analyst / analyst123</span>
+          <span className="px-1.5 py-0.5 rounded bg-white/5 border border-white/10">operator / operator123</span>
+        </div>
+        <div className="text-white/40 text-[10px] pt-1">
+          Isolation test: <span className="text-white/60">merchant_b_admin / admin123</span>
+        </div>
       </div>
 
       {/* Form */}
@@ -418,14 +431,26 @@ function SignUpPanel({ onSwitchToSignIn }: { onSwitchToSignIn: () => void }) {
 
   return (
     <div className="flex flex-col h-full justify-center p-14 xl:p-16">
-      <div className="mb-9">
-        <p className="font-mono text-[10px] tracking-[0.14em] text-white/30 uppercase mb-3">
+      <div className="mb-6">
+        <p className="font-mono text-[10px] tracking-[0.14em] text-white/30 uppercase mb-2">
           Financial Intelligence Platform
         </p>
         <h2 className="login-display-heading">Sign Up</h2>
-        <p className="font-mono text-[12px] text-white/30 mt-2">
-          Enter your credentials to access FinSight.
+        <p className="font-mono text-[11px] text-white/40 mt-1">
+          Demo Sandbox: Connects to shared demo workspace <span className="text-emerald-400 font-mono">Merchant A</span>.
         </p>
+      </div>
+
+      {/* Shared sandbox notice */}
+      <div className="mb-6 p-3 rounded-lg border border-white/10 bg-white/[0.03] space-y-1.5 font-mono text-[11px]">
+        <div className="text-white/60 text-[10px] uppercase tracking-wider">Shared Sandbox Notice:</div>
+        <p className="text-white/50 text-[10px] leading-relaxed">
+          FinSight uses preset evaluator personas. To evaluate the platform, sign in with one of the standard demo accounts:
+        </p>
+        <div className="flex flex-wrap gap-2 text-white/80 text-[11px] pt-1">
+          <span className="px-1.5 py-0.5 rounded bg-white/5 border border-white/10">admin / admin123</span>
+          <span className="px-1.5 py-0.5 rounded bg-white/5 border border-white/10">analyst / analyst123</span>
+        </div>
       </div>
 
       {signUpError && (
