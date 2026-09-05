@@ -208,6 +208,11 @@ public class SeedDataService {
 
         // ─── 70 CLEAN BULK DATA RECORDS FOR REALISTIC METRICS ───
         if (orderRepository.findByOrderId("ord_2001").isEmpty()) {
+            List<Order> bulkOrders = new ArrayList<>(70);
+            List<Settlement> bulkSettlements = new ArrayList<>(70);
+            List<Payment> bulkPayments = new ArrayList<>(70);
+            List<Fee> bulkFees = new ArrayList<>(70);
+
             for (int i = 2001; i <= 2070; i++) {
                 String ordId = "ord_" + i;
                 String payId = "pay_" + i;
@@ -221,11 +226,66 @@ public class SeedDataService {
                 BigDecimal totalFee = feeAmt.add(taxAmt);
                 BigDecimal netAmt = amount.subtract(totalFee);
 
-                Order bulkOrd = getOrCreateOrder(ordId, "merchant_a", custId, amount, OrderStatus.PAID, ordersCreated);
-                Settlement bulkSet = getOrCreateSettlement(setId, "merchant_a", amount, BigDecimal.ZERO, feeAmt, taxAmt, BigDecimal.ZERO, netAmt, netAmt, SettlementStatus.SETTLED, "UTR9988" + i, settlementsCreated);
-                Payment bulkPay = getOrCreatePayment(payId, bulkOrd, "merchant_a", PaymentMethod.CARD, amount, PaymentStatus.SUCCESS, bulkSet, OffsetDateTime.now(), paymentsCreated);
-                createFeeIfAbsent(bulkPay, null, "merchant_a", feeAmt, taxAmt, totalFee, feeRate, feesCreated);
+                Order bulkOrd = Order.builder()
+                        .orderId(ordId)
+                        .merchantId("merchant_a")
+                        .customerId(custId)
+                        .amount(amount)
+                        .currency("INR")
+                        .status(OrderStatus.PAID)
+                        .build();
+                bulkOrders.add(bulkOrd);
+                ordersCreated.add(ordId);
+
+                Settlement bulkSet = Settlement.builder()
+                        .settlementId(setId)
+                        .merchantId("merchant_a")
+                        .grossAmount(amount)
+                        .totalRefundAmount(BigDecimal.ZERO)
+                        .totalFeeAmount(feeAmt)
+                        .totalTaxAmount(taxAmt)
+                        .totalAdjustmentAmount(BigDecimal.ZERO)
+                        .netAmount(netAmt)
+                        .actualSettledAmount(netAmt)
+                        .status(SettlementStatus.SETTLED)
+                        .utr("UTR9988" + i)
+                        .settledAt(OffsetDateTime.now())
+                        .build();
+                bulkSettlements.add(bulkSet);
+                settlementsCreated.add(setId);
+
+                Payment bulkPay = Payment.builder()
+                        .paymentId(payId)
+                        .order(bulkOrd)
+                        .merchantId("merchant_a")
+                        .method(PaymentMethod.CARD)
+                        .amount(amount)
+                        .currency("INR")
+                        .status(PaymentStatus.SUCCESS)
+                        .settlement(bulkSet)
+                        .createdAt(OffsetDateTime.now())
+                        .build();
+                bulkPayments.add(bulkPay);
+                paymentsCreated.add(payId);
+
+                Fee bulkFee = Fee.builder()
+                        .payment(bulkPay)
+                        .refund(null)
+                        .merchantId("merchant_a")
+                        .feeAmount(feeAmt)
+                        .taxAmount(taxAmt)
+                        .totalFee(totalFee)
+                        .feeRate(feeRate)
+                        .currency("INR")
+                        .build();
+                bulkFees.add(bulkFee);
+                feesCreated.add("fee_" + payId);
             }
+
+            orderRepository.saveAll(bulkOrders);
+            settlementRepository.saveAll(bulkSettlements);
+            paymentRepository.saveAll(bulkPayments);
+            feeRepository.saveAll(bulkFees);
         }
 
         return SeedResponseDto.builder()
