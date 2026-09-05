@@ -262,6 +262,8 @@ The Vite dev server opens at `http://localhost:5173` and proxies all `/api/*` re
 docker-compose up --build
 ```
 
+> **Note**: Production uses a persistent database — run `POST /api/demo/reset` after any manual testing to restore clean state before a live demo.
+
 ---
 
 

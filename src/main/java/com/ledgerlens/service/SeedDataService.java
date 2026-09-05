@@ -88,6 +88,7 @@ public class SeedDataService {
             jdbcTemplate.update("DELETE FROM audit_logs WHERE merchant_id = ?", mId);
 
             // 11. Delete Reconciliation Runs
+            jdbcTemplate.update("DELETE FROM reconciliation_runs WHERE idempotency_key LIKE ?", mId + ":%");
         }
         // Ensure required singleton mutex rows exist in reconciliation_execution_locks
         try {
