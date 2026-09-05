@@ -3,6 +3,11 @@
 **AI Finance Controller — deterministic financial reconciliation with forensic AI exception investigation.**
 
 ---
+## 🚀 Live Demo
+
+**TRY FINSIGHT LIVE:https://finsight-production-f61a.up.railway.app/**
+
+> Demo credentials are provided in the application for evaluation.
 
 ## 🚀 Quick Start — One Command, One URL
 
