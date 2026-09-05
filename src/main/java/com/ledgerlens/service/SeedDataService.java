@@ -24,8 +24,12 @@ public class SeedDataService {
     private final com.ledgerlens.repository.MerchantRepository merchantRepository;
     private final com.ledgerlens.repository.MerchantSettingsRepository merchantSettingsRepository;
     private final com.ledgerlens.repository.AppUserRepository appUserRepository;
+    private final FinancialExceptionRepository exceptionRepository;
+    private final InvestigationRepository investigationRepository;
+    private final HistoricalInvestigationEmbeddingRepository embeddingRepository;
+    private final ReconciliationExecutionLockRepository reconciliationExecutionLockRepository;
 
-    public SeedDataService(OrderRepository orderRepository, PaymentRepository paymentRepository, RefundRepository refundRepository, FeeRepository feeRepository, AdjustmentRepository adjustmentRepository, SettlementRepository settlementRepository, com.ledgerlens.repository.MerchantRepository merchantRepository, com.ledgerlens.repository.MerchantSettingsRepository merchantSettingsRepository, com.ledgerlens.repository.AppUserRepository appUserRepository) {
+    public SeedDataService(OrderRepository orderRepository, PaymentRepository paymentRepository, RefundRepository refundRepository, FeeRepository feeRepository, AdjustmentRepository adjustmentRepository, SettlementRepository settlementRepository, com.ledgerlens.repository.MerchantRepository merchantRepository, com.ledgerlens.repository.MerchantSettingsRepository merchantSettingsRepository, com.ledgerlens.repository.AppUserRepository appUserRepository, FinancialExceptionRepository exceptionRepository, InvestigationRepository investigationRepository, HistoricalInvestigationEmbeddingRepository embeddingRepository, ReconciliationExecutionLockRepository reconciliationExecutionLockRepository) {
         this.orderRepository = orderRepository;
         this.paymentRepository = paymentRepository;
         this.refundRepository = refundRepository;
@@ -35,6 +39,10 @@ public class SeedDataService {
         this.merchantRepository = merchantRepository;
         this.merchantSettingsRepository = merchantSettingsRepository;
         this.appUserRepository = appUserRepository;
+        this.exceptionRepository = exceptionRepository;
+        this.investigationRepository = investigationRepository;
+        this.embeddingRepository = embeddingRepository;
+        this.reconciliationExecutionLockRepository = reconciliationExecutionLockRepository;
     }
 
     @Transactional
@@ -49,6 +57,31 @@ public class SeedDataService {
         createUserIfAbsent("merchant_b_operator", merchantB, "OPERATOR");
         createUserIfAbsent("merchant_b_analyst", merchantB, "ANALYST");
         createUserIfAbsent("merchant_b_admin", merchantB, "ADMIN");
+
+        // CRITICAL: Clear any previous reconciliation exceptions, investigations, and embeddings
+        // for demo merchants to guarantee a pristine baseline with ZERO exceptions and ZERO investigations
+        // before reconciliation or explicit diagnosis is triggered.
+        List<String> demoMerchants = List.of("merchant_a", "merchant_b");
+        for (String mId : demoMerchants) {
+            List<Investigation> investigations = investigationRepository.findByException_MerchantId(mId);
+            for (Investigation inv : investigations) {
+                embeddingRepository.findByInvestigation_Id(inv.getId())
+                        .ifPresent(embeddingRepository::delete);
+            }
+            List<HistoricalInvestigationEmbedding> embeddings = embeddingRepository.findByMerchantId(mId);
+            if (!embeddings.isEmpty()) {
+                embeddingRepository.deleteAllInBatch(embeddings);
+            }
+            if (!investigations.isEmpty()) {
+                investigationRepository.deleteAllInBatch(investigations);
+            }
+            List<FinancialException> exceptions = exceptionRepository.findByMerchantId(mId);
+            if (!exceptions.isEmpty()) {
+                exceptionRepository.deleteAllInBatch(exceptions);
+            }
+        }
+        reconciliationExecutionLockRepository.deleteAll();
+
         List<String> ordersCreated = new ArrayList<>();
         List<String> paymentsCreated = new ArrayList<>();
         List<String> refundsCreated = new ArrayList<>();
@@ -171,7 +204,14 @@ public class SeedDataService {
     }
 
     private Order getOrCreateOrder(String orderId, String merchantId, String customerId, BigDecimal amount, OrderStatus status, List<String> tracker) {
-        return orderRepository.findByOrderId(orderId).orElseGet(() -> {
+        return orderRepository.findByOrderId(orderId).map(order -> {
+            order.setMerchantId(merchantId);
+            order.setCustomerId(customerId);
+            order.setAmount(amount);
+            order.setCurrency("INR");
+            order.setStatus(status);
+            return orderRepository.save(order);
+        }).orElseGet(() -> {
             Order order = orderRepository.save(Order.builder()
                     .orderId(orderId)
                     .merchantId(merchantId)
@@ -186,7 +226,20 @@ public class SeedDataService {
     }
 
     private Settlement getOrCreateSettlement(String settlementId, String merchantId, BigDecimal gross, BigDecimal refunds, BigDecimal fee, BigDecimal tax, BigDecimal adj, BigDecimal net, BigDecimal actual, SettlementStatus status, String utr, List<String> tracker) {
-        return settlementRepository.findBySettlementId(settlementId).orElseGet(() -> {
+        return settlementRepository.findBySettlementId(settlementId).map(s -> {
+            s.setMerchantId(merchantId);
+            s.setGrossAmount(gross);
+            s.setTotalRefundAmount(refunds);
+            s.setTotalFeeAmount(fee);
+            s.setTotalTaxAmount(tax);
+            s.setTotalAdjustmentAmount(adj);
+            s.setNetAmount(net);
+            s.setActualSettledAmount(actual);
+            s.setStatus(status);
+            s.setUtr(utr);
+            s.setSettledAt(status == SettlementStatus.SETTLED ? OffsetDateTime.now() : null);
+            return settlementRepository.save(s);
+        }).orElseGet(() -> {
             Settlement settlement = settlementRepository.save(Settlement.builder()
                     .settlementId(settlementId)
                     .merchantId(merchantId)
@@ -207,7 +260,17 @@ public class SeedDataService {
     }
 
     private Payment getOrCreatePayment(String paymentId, Order order, String merchantId, PaymentMethod method, BigDecimal amount, PaymentStatus status, Settlement settlement, OffsetDateTime createdAt, List<String> tracker) {
-        return paymentRepository.findByPaymentId(paymentId).orElseGet(() -> {
+        return paymentRepository.findByPaymentId(paymentId).map(payment -> {
+            payment.setOrder(order);
+            payment.setMerchantId(merchantId);
+            payment.setMethod(method);
+            payment.setAmount(amount);
+            payment.setCurrency("INR");
+            payment.setStatus(status);
+            payment.setSettlement(settlement);
+            payment.setCreatedAt(createdAt);
+            return paymentRepository.save(payment);
+        }).orElseGet(() -> {
             Payment payment = paymentRepository.save(Payment.builder()
                     .paymentId(paymentId)
                     .order(order)

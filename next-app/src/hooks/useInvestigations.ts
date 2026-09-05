@@ -7,6 +7,7 @@ export function useInvestigationDetail(exceptionId: string | undefined) {
     queryFn: () => investigationsApi.get(exceptionId!),
     enabled: !!exceptionId,
     retry: false, // investigation might not exist yet
+    staleTime: 0,
   })
 }
 

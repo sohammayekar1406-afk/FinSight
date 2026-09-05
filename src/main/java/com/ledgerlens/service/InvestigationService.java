@@ -295,6 +295,12 @@ public class InvestigationService {
         FinancialException exception = exceptionRepository.findByExceptionIdAndMerchantId(exceptionId, merchantContext.merchantId())
                 .orElseThrow(() -> new ResourceNotFoundException("Exception " + exceptionId + " was not found"));
 
+        // CRITICAL FIX: Require existing investigation before resolving
+        Investigation investigation = investigationRepository.findByException_ExceptionIdAndException_MerchantId(exceptionId, merchantContext.merchantId())
+                .orElseThrow(() -> new IllegalStateException(
+                        "Cannot resolve exception without investigation. Please run 'Investigate' first for exception " + exceptionId
+                ));
+
         exception.setStatus(ExceptionStatus.RESOLVED_MANUAL);
         exception.setResolvedAt(OffsetDateTime.now());
         exceptionRepository.save(exception);
@@ -302,20 +308,8 @@ public class InvestigationService {
         String username = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication() != null ? 
                 org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication().getName() : "HUMAN_OPERATOR";
 
-        Optional<Investigation> existingOpt = investigationRepository.findByException_ExceptionIdAndException_MerchantId(exceptionId, merchantContext.merchantId());
-        Investigation investigation;
-
-        if (existingOpt.isPresent()) {
-            investigation = existingOpt.get();
-            investigation.setActionTaken(ActionTaken.MANUALLY_OVERRIDDEN);
-            investigationRepository.save(investigation);
-        } else {
-            InvestigationResponseDto initial = investigateException(exceptionId);
-            investigation = investigationRepository.findByException_ExceptionIdAndException_MerchantId(exceptionId, merchantContext.merchantId())
-                    .orElseThrow(() -> new ResourceNotFoundException("Investigation for exception " + exceptionId + " was not found"));
-            investigation.setActionTaken(ActionTaken.MANUALLY_OVERRIDDEN);
-            investigationRepository.save(investigation);
-        }
+        investigation.setActionTaken(ActionTaken.MANUALLY_OVERRIDDEN);
+        investigationRepository.save(investigation);
 
         // Phase 6: Embed manually resolved investigation
         historicalInvestigationEmbeddingService.embedAndPersistResolvedInvestigation(investigation);
@@ -348,6 +342,12 @@ public class InvestigationService {
         FinancialException exception = exceptionRepository.findByExceptionIdAndMerchantId(exceptionId, merchantContext.merchantId())
                 .orElseThrow(() -> new ResourceNotFoundException("Exception " + exceptionId + " was not found"));
 
+        // CRITICAL FIX: Require existing investigation before approving
+        Investigation investigation = investigationRepository.findByException_ExceptionIdAndException_MerchantId(exceptionId, merchantContext.merchantId())
+                .orElseThrow(() -> new IllegalStateException(
+                        "Cannot approve exception without investigation. Please run 'Investigate' first for exception " + exceptionId
+                ));
+
         exception.setStatus(ExceptionStatus.RESOLVED_MANUAL);
         exception.setResolvedAt(OffsetDateTime.now());
         exceptionRepository.save(exception);
@@ -355,20 +355,8 @@ public class InvestigationService {
         String username = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication() != null ? 
                 org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication().getName() : "ADMIN";
 
-        Optional<Investigation> existingOpt = investigationRepository.findByException_ExceptionIdAndException_MerchantId(exceptionId, merchantContext.merchantId());
-        Investigation investigation;
-
-        if (existingOpt.isPresent()) {
-            investigation = existingOpt.get();
-            investigation.setActionTaken(ActionTaken.APPROVED);
-            investigationRepository.save(investigation);
-        } else {
-            investigateException(exceptionId);
-            investigation = investigationRepository.findByException_ExceptionIdAndException_MerchantId(exceptionId, merchantContext.merchantId())
-                    .orElseThrow(() -> new ResourceNotFoundException("Investigation for exception " + exceptionId + " was not found"));
-            investigation.setActionTaken(ActionTaken.APPROVED);
-            investigationRepository.save(investigation);
-        }
+        investigation.setActionTaken(ActionTaken.APPROVED);
+        investigationRepository.save(investigation);
 
         // Phase 6: Embed approved resolved investigation
         historicalInvestigationEmbeddingService.embedAndPersistResolvedInvestigation(investigation);
@@ -401,6 +389,12 @@ public class InvestigationService {
         FinancialException exception = exceptionRepository.findByExceptionIdAndMerchantId(exceptionId, merchantContext.merchantId())
                 .orElseThrow(() -> new ResourceNotFoundException("Exception " + exceptionId + " was not found"));
 
+        // CRITICAL FIX: Require existing investigation before rejecting
+        Investigation investigation = investigationRepository.findByException_ExceptionIdAndException_MerchantId(exceptionId, merchantContext.merchantId())
+                .orElseThrow(() -> new IllegalStateException(
+                        "Cannot reject exception without investigation. Please run 'Investigate' first for exception " + exceptionId
+                ));
+
         exception.setStatus(ExceptionStatus.RESOLVED_MANUAL);
         exception.setResolvedAt(OffsetDateTime.now());
         exceptionRepository.save(exception);
@@ -408,20 +402,8 @@ public class InvestigationService {
         String username = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication() != null ? 
                 org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication().getName() : "ADMIN";
 
-        Optional<Investigation> existingOpt = investigationRepository.findByException_ExceptionIdAndException_MerchantId(exceptionId, merchantContext.merchantId());
-        Investigation investigation;
-
-        if (existingOpt.isPresent()) {
-            investigation = existingOpt.get();
-            investigation.setActionTaken(ActionTaken.REJECTED);
-            investigationRepository.save(investigation);
-        } else {
-            investigateException(exceptionId);
-            investigation = investigationRepository.findByException_ExceptionIdAndException_MerchantId(exceptionId, merchantContext.merchantId())
-                    .orElseThrow(() -> new ResourceNotFoundException("Investigation for exception " + exceptionId + " was not found"));
-            investigation.setActionTaken(ActionTaken.REJECTED);
-            investigationRepository.save(investigation);
-        }
+        investigation.setActionTaken(ActionTaken.REJECTED);
+        investigationRepository.save(investigation);
 
         InvestigationEvidenceDto evidence = evidenceCollectionService.collectEvidence(exception);
 
@@ -451,26 +433,20 @@ public class InvestigationService {
         FinancialException exception = exceptionRepository.findByExceptionIdAndMerchantId(exceptionId, merchantContext.merchantId())
                 .orElseThrow(() -> new ResourceNotFoundException("Exception " + exceptionId + " was not found"));
 
+        // CRITICAL FIX: Require existing investigation before escalating
+        Investigation investigation = investigationRepository.findByException_ExceptionIdAndException_MerchantId(exceptionId, merchantContext.merchantId())
+                .orElseThrow(() -> new IllegalStateException(
+                        "Cannot escalate exception without investigation. Please run 'Investigate' first for exception " + exceptionId
+                ));
+
         exception.setStatus(ExceptionStatus.ESCALATED);
         exceptionRepository.save(exception);
 
         String username = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication() != null ? 
                 org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication().getName() : "ANALYST";
 
-        Optional<Investigation> existingOpt = investigationRepository.findByException_ExceptionIdAndException_MerchantId(exceptionId, merchantContext.merchantId());
-        Investigation investigation;
-
-        if (existingOpt.isPresent()) {
-            investigation = existingOpt.get();
-            investigation.setActionTaken(ActionTaken.ESCALATED);
-            investigationRepository.save(investigation);
-        } else {
-            investigateException(exceptionId);
-            investigation = investigationRepository.findByException_ExceptionIdAndException_MerchantId(exceptionId, merchantContext.merchantId())
-                    .orElseThrow(() -> new ResourceNotFoundException("Investigation for exception " + exceptionId + " was not found"));
-            investigation.setActionTaken(ActionTaken.ESCALATED);
-            investigationRepository.save(investigation);
-        }
+        investigation.setActionTaken(ActionTaken.ESCALATED);
+        investigationRepository.save(investigation);
 
         InvestigationEvidenceDto evidence = evidenceCollectionService.collectEvidence(exception);
 

@@ -108,7 +108,7 @@ export default function InvestigationDetailPage() {
               className="text-xs bg-foreground hover:bg-foreground/90 text-background font-medium"
             >
               <Bot className="w-3.5 h-3.5 mr-1.5" />
-              Re-run Investigation
+              {investigation ? "Re-run Investigation" : "Run AI Investigation"}
             </Button>
           )}
 

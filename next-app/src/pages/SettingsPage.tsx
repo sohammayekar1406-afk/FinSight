@@ -1,4 +1,5 @@
 import { useState } from "react"
+import { useQueryClient } from "@tanstack/react-query"
 import { useAuth } from "@/contexts/AuthContext"
 import { demoApi } from "@/api/demoApi"
 import {
@@ -23,6 +24,7 @@ import {
 
 export default function SettingsPage() {
   const { user } = useAuth()
+  const queryClient = useQueryClient()
   const [seeding, setSeeding] = useState(false)
   const [validating, setValidating] = useState(false)
   const [validationReport, setValidationReport] = useState<Record<string, unknown> | null>(null)
@@ -31,6 +33,7 @@ export default function SettingsPage() {
     setSeeding(true)
     try {
       const res = await demoApi.seed()
+      queryClient.invalidateQueries()
       toast.success(res.message || "Demo dataset seeded successfully!")
     } catch (err: unknown) {
       const e = err as { response?: { status?: number; data?: { message?: string } }; message?: string }

@@ -18,13 +18,35 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
- * Runs a full end-to-end demo validation:
+ * Runs a full end-to-end demo validation pipeline:
  *   1. Seed demo data (idempotent)
- *   2. Run reconciliation
- *   3. Run investigations on all open exceptions
- *   4. Verify audit trail
- *   5. Collect dashboard stats
- *   6. Produce DemoValidationReportDto
+ *   2. Run reconciliation → creates FinancialException records
+ *   3. Verify exception detection
+ *   4. Run AI investigations on ALL open exceptions   ← ROOT CAUSE NOTE
+ *   5. Verify audit trail
+ *   6. Collect dashboard stats
+ *   7. Produce DemoValidationReportDto
+ *
+ * <p><strong>IMPORTANT — ROOT CAUSE OF INVESTIGATION PRE-POPULATION:</strong><br/>
+ * Step 4 explicitly calls {@code investigateAllOpenExceptions()}, which creates an
+ * {@code Investigation} record for every open exception in the database.
+ * After this validation pipeline has been executed, <em>all</em> exceptions will have
+ * persisted investigations. Consequently, when a user subsequently opens any
+ * Exception Detail page, the frontend's {@code GET /api/investigations/{id}} will
+ * correctly find and display the investigation — NOT because opening the page triggered
+ * one, but because this validation pipeline created it.
+ *
+ * <p>This is intentional for the full demo validation workflow. However, if a user
+ * wants to experience the "exception with no investigation" state, they must:
+ * <ol>
+ *   <li>Seed data via POST /api/demo/seed</li>
+ *   <li>Reconcile via POST /api/reconciliation/run</li>
+ *   <li>NOT run POST /api/demo/validate</li>
+ * </ol>
+ * Only after an explicit user click on "Run AI Investigation" / POST /api/investigations/{id}
+ * should an investigation appear for a specific exception.
+ *
+ * <p>Requires ADMIN role. Exposed via POST /api/demo/validate.
  */
 @Service
 public class DemoValidationService {
@@ -123,6 +145,11 @@ public class DemoValidationService {
         }
 
         // -- Step 4: AI Investigation ------------------------------------------
+        // ROOT CAUSE NOTE: This call creates an Investigation record for EVERY open exception.
+        // After this step runs, all exceptions in the current merchant scope will have
+        // persisted investigations. This is the reason why exception detail pages show
+        // investigation data immediately after a user runs "Run E2E Demo Validation" —
+        // the investigations were created here, not by opening the exception detail page.
         RunInvestigationsResultDto invResult;
         try {
             invResult = investigationService.investigateAllOpenExceptions();
