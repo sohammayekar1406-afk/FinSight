@@ -7,6 +7,7 @@ import com.ledgerlens.entity.enums.*;
 import com.ledgerlens.repository.*;
 import com.ledgerlens.service.ExceptionDetectionService;
 import com.ledgerlens.service.MerchantContext;
+import com.ledgerlens.service.ReconciliationLockService;
 import com.ledgerlens.service.ReconciliationService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -41,6 +42,7 @@ class ReconciliationServiceTest {
     @Mock private ObjectMapper objectMapper;
     @Mock private MerchantContext merchantContext;
     @Mock private MerchantSettingsRepository merchantSettingsRepository;
+    @Mock private ReconciliationLockService reconciliationLockService;
 
     @InjectMocks
     private ReconciliationService reconciliationService;

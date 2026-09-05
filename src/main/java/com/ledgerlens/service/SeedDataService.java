@@ -88,9 +88,19 @@ public class SeedDataService {
             jdbcTemplate.update("DELETE FROM audit_logs WHERE merchant_id = ?", mId);
 
             // 11. Delete Reconciliation Runs
-            jdbcTemplate.update("DELETE FROM reconciliation_runs WHERE idempotency_key LIKE ?", mId + ":%");
         }
-        jdbcTemplate.update("DELETE FROM reconciliation_execution_locks");
+        // Ensure required singleton mutex rows exist in reconciliation_execution_locks
+        try {
+            jdbcTemplate.update("INSERT INTO reconciliation_execution_locks (id) VALUES (?) ON CONFLICT (id) DO NOTHING", ReconciliationExecutionLock.GLOBAL_LOCK_ID);
+            jdbcTemplate.update("INSERT INTO reconciliation_execution_locks (id) VALUES (?) ON CONFLICT (id) DO NOTHING", "MERCHANT:merchant_a");
+            jdbcTemplate.update("INSERT INTO reconciliation_execution_locks (id) VALUES (?) ON CONFLICT (id) DO NOTHING", "MERCHANT:merchant_b");
+        } catch (Exception e) {
+            try {
+                jdbcTemplate.update("MERGE INTO reconciliation_execution_locks (id) KEY (id) VALUES (?)", ReconciliationExecutionLock.GLOBAL_LOCK_ID);
+                jdbcTemplate.update("MERGE INTO reconciliation_execution_locks (id) KEY (id) VALUES (?)", "MERCHANT:merchant_a");
+                jdbcTemplate.update("MERGE INTO reconciliation_execution_locks (id) KEY (id) VALUES (?)", "MERCHANT:merchant_b");
+            } catch (Exception ignored) { }
+        }
         if (entityManager != null) {
             entityManager.clear();
         }

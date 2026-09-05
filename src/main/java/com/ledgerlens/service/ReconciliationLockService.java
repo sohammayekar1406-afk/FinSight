@@ -12,14 +12,21 @@ public class ReconciliationLockService {
     private final ReconciliationExecutionLockRepository repository;
     public ReconciliationLockService(ReconciliationExecutionLockRepository repository) { this.repository = repository; }
 
-    @Transactional
-    public void ensureLockExists() {
-        if (!repository.existsById(ReconciliationExecutionLock.GLOBAL_LOCK_ID)) {
+    @Transactional(propagation = org.springframework.transaction.annotation.Propagation.REQUIRES_NEW)
+    public void ensureLockExists(String lockId) {
+        if (!repository.existsById(lockId)) {
             try {
-                repository.saveAndFlush(new ReconciliationExecutionLock(ReconciliationExecutionLock.GLOBAL_LOCK_ID));
+                repository.saveAndFlush(new ReconciliationExecutionLock(lockId));
             } catch (DataIntegrityViolationException ignored) {
-                // Another node initialized the same singleton row first.
+                // Another node or transaction initialized the same singleton row first.
             }
         }
+    }
+
+    @Transactional(propagation = org.springframework.transaction.annotation.Propagation.REQUIRES_NEW)
+    public void ensureLockExists() {
+        ensureLockExists(ReconciliationExecutionLock.GLOBAL_LOCK_ID);
+        ensureLockExists("MERCHANT:merchant_a");
+        ensureLockExists("MERCHANT:merchant_b");
     }
 }

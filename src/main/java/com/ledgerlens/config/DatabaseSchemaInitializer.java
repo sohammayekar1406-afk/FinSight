@@ -34,7 +34,25 @@ public class DatabaseSchemaInitializer {
                         "type IN ('AMOUNT_MISMATCH', 'MISSING_PAYMENT', 'MISSING_SETTLEMENT', 'UNEXPECTED_FEE', " +
                         "'DUPLICATE_TRANSACTION', 'DELAYED_SETTLEMENT', 'DISCREPANT_REFUND', 'UNKNOWN_TRANSACTION', " +
                         "'UNMATCHED_ADJUSTMENT', 'CURRENCY_MISMATCH', 'DATA_INCOMPLETE'))");
-                log.info("Successfully ensured exceptions table check constraints cover all enum values for both columns.");
+                // Ensure reconciliation_execution_locks table exists with required singleton rows
+                jdbcTemplate.execute("CREATE TABLE IF NOT EXISTS reconciliation_execution_locks (" +
+                        "id VARCHAR(128) PRIMARY KEY, " +
+                        "created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP" +
+                        ")");
+                try {
+                    jdbcTemplate.execute("INSERT INTO reconciliation_execution_locks (id) VALUES " +
+                            "('GLOBAL_RECONCILIATION'), ('MERCHANT:merchant_a'), ('MERCHANT:merchant_b') " +
+                            "ON CONFLICT (id) DO NOTHING");
+                } catch (Exception ex) {
+                    // Fallback for H2 or engines without ON CONFLICT
+                    try {
+                        jdbcTemplate.execute("MERGE INTO reconciliation_execution_locks (id) KEY (id) VALUES ('GLOBAL_RECONCILIATION')");
+                        jdbcTemplate.execute("MERGE INTO reconciliation_execution_locks (id) KEY (id) VALUES ('MERCHANT:merchant_a')");
+                        jdbcTemplate.execute("MERGE INTO reconciliation_execution_locks (id) KEY (id) VALUES ('MERCHANT:merchant_b')");
+                    } catch (Exception ignored) {
+                    }
+                }
+                log.info("Successfully ensured reconciliation_execution_locks table and singleton rows exist.");
             } catch (Exception e) {
                 log.warn("DatabaseSchemaInitializer non-fatal error: {}", e.getMessage());
             }

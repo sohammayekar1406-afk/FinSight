@@ -30,17 +30,6 @@ import {
   AlertTriangle,
 } from "lucide-react"
 
-// Static mock transactions list to ensure render purity
-const MOCK_TRANSACTIONS: TransactionItem[] = [
-  { id: "tx_1001", orderId: "ord_1001", paymentId: "pay_1001", settlementId: "set_1001", amount: 1200.0, method: "CARD", status: "SETTLED", date: "2026-08-28T20:00:00Z" },
-  { id: "tx_1002", orderId: "ord_1002", paymentId: "pay_1002", settlementId: "set_1002", amount: 1000.0, method: "UPI", status: "DISCREPANCY", date: "2026-08-28T19:00:00Z" },
-  { id: "tx_1003", orderId: "ord_1003", paymentId: "pay_1003", settlementId: "set_1003", amount: 2000.0, method: "NETBANKING", status: "PARTIAL_REFUND", date: "2026-08-28T18:00:00Z" },
-  { id: "tx_1004", orderId: "ord_1004", paymentId: "pay_1004", settlementId: null, amount: 1500.0, method: "UPI", status: "UNSETTLED", date: "2026-08-27T12:00:00Z" },
-  { id: "tx_1005", orderId: "ord_1005", paymentId: "pay_1005", settlementId: "set_1005", amount: 500.0, method: "CARD", status: "OVER_REFUNDED", date: "2026-08-27T10:00:00Z" },
-  { id: "tx_1006", orderId: "ord_1006", paymentId: "pay_1006", settlementId: "set_1006", amount: 350.0, method: "WALLET", status: "FEE_MISMATCH", date: "2026-08-27T08:00:00Z" },
-  { id: "tx_1007", orderId: "ord_1007", paymentId: "pay_1007", settlementId: "set_1007", amount: 300.0, method: "CARD", status: "SETTLED", date: "2026-08-27T06:00:00Z" },
-]
-
 export default function TransactionsPage() {
   const { data: fetchedTransactions, isLoading, isError, refetch } = useTransactions()
 
@@ -50,10 +39,7 @@ export default function TransactionsPage() {
   const pageSize = 10
 
   const allTransactions: TransactionItem[] = useMemo(() => {
-    if (Array.isArray(fetchedTransactions) && fetchedTransactions.length > 0) {
-      return fetchedTransactions
-    }
-    return MOCK_TRANSACTIONS
+    return Array.isArray(fetchedTransactions) ? fetchedTransactions : []
   }, [fetchedTransactions])
 
   const filteredTransactions = useMemo(() => {
@@ -204,7 +190,11 @@ export default function TransactionsPage() {
                     <EmptyState
                       icon={<ArrowLeftRight className="w-6 h-6" />}
                       title="No transactions found"
-                      description="No records match the current filter selection."
+                      description={
+                        searchTerm || statusFilter !== "ALL"
+                          ? "No records match the current filter selection."
+                          : "No transactions recorded yet. Seed demo data in Settings to populate the transaction ledger."
+                      }
                     />
                   </td>
                 </tr>
@@ -216,11 +206,16 @@ export default function TransactionsPage() {
         {/* Footer Pagination */}
         <div className="p-4 border-t border-border flex items-center justify-between text-xs text-muted-foreground">
           <div>
-            Showing <span className="font-semibold text-foreground">{page * pageSize + 1}</span> to{" "}
+            Showing{" "}
+            <span className="font-semibold text-foreground">
+              {filteredTransactions.length === 0 ? 0 : page * pageSize + 1}
+            </span>{" "}
+            to{" "}
             <span className="font-semibold text-foreground">
               {Math.min((page + 1) * pageSize, filteredTransactions.length)}
             </span>{" "}
-            of <span className="font-semibold text-foreground">{filteredTransactions.length}</span>{" "}
+            of{" "}
+            <span className="font-semibold text-foreground">{filteredTransactions.length}</span>{" "}
             records
           </div>
           <div className="flex items-center gap-2">

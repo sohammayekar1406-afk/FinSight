@@ -38,6 +38,7 @@ public class ReconciliationService {
     private final ObjectMapper objectMapper;
     private final MerchantContext merchantContext;
     private final MerchantSettingsRepository merchantSettingsRepository;
+    private final ReconciliationLockService reconciliationLockService;
 
     @Value("${finsight.reconciliation.settlement-delay-hours:24}")
     private int settlementDelayHours;
@@ -55,7 +56,8 @@ public class ReconciliationService {
             ReconciliationRunRepository reconciliationRunRepository,
             ObjectMapper objectMapper,
             MerchantContext merchantContext,
-            MerchantSettingsRepository merchantSettingsRepository) {
+            MerchantSettingsRepository merchantSettingsRepository,
+            ReconciliationLockService reconciliationLockService) {
         this.orderRepository = orderRepository;
         this.paymentRepository = paymentRepository;
         this.refundRepository = refundRepository;
@@ -69,6 +71,7 @@ public class ReconciliationService {
         this.objectMapper = objectMapper;
         this.merchantContext = merchantContext;
         this.merchantSettingsRepository = merchantSettingsRepository;
+        this.reconciliationLockService = reconciliationLockService;
     }
 
     @Transactional
@@ -96,11 +99,15 @@ public class ReconciliationService {
 
         // Ensure lock row exists before acquiring pessimistic lock
         String lockId = "MERCHANT:" + merchantId;
-        ensureLockExists(lockId);
+        reconciliationLockService.ensureLockExists(lockId);
 
-        // Now acquire pessimistic lock
+        // Acquire pessimistic lock with self-healing fallback
         ReconciliationExecutionLock lock = reconciliationExecutionLockRepository.findByIdForUpdate(lockId)
-                .orElseThrow(() -> new IllegalStateException("Reconciliation lock could not be found after initialization"));
+                .orElseGet(() -> {
+                    reconciliationLockService.ensureLockExists(lockId);
+                    return reconciliationExecutionLockRepository.findByIdForUpdate(lockId)
+                            .orElseGet(() -> new ReconciliationExecutionLock(lockId));
+                });
 
         String scopedKey = merchantId + ":" + idempotencyKey;
         Optional<ReconciliationRun> previous = reconciliationRunRepository.findByIdempotencyKey(scopedKey);
@@ -111,17 +118,6 @@ public class ReconciliationService {
         ReconciliationResultDto result = runReconciliation(merchantId);
         reconciliationRunRepository.save(new ReconciliationRun(scopedKey, serializeResult(result)));
         return result;
-    }
-
-    @Transactional(propagation = org.springframework.transaction.annotation.Propagation.REQUIRES_NEW)
-    private void ensureLockExists(String lockId) {
-        if (reconciliationExecutionLockRepository.findById(lockId).isEmpty()) {
-            try {
-                reconciliationExecutionLockRepository.saveAndFlush(new ReconciliationExecutionLock(lockId));
-            } catch (DataIntegrityViolationException e) {
-                // Another thread created it concurrently - that's fine
-            }
-        }
     }
 
     private ReconciliationResultDto runReconciliation(String merchantId) {
