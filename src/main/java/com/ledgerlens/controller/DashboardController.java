@@ -20,6 +20,8 @@ public class DashboardController {
     @GetMapping("/stats")
     public ResponseEntity<DashboardStatsDto> getDashboardStats() {
         DashboardStatsDto stats = dashboardService.getDashboardStats();
-        return ResponseEntity.ok(stats);
+        return ResponseEntity.ok()
+                .cacheControl(org.springframework.http.CacheControl.noCache().noStore().mustRevalidate())
+                .body(stats);
     }
 }

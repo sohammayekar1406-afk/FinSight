@@ -1,5 +1,6 @@
-import { useMemo } from "react"
+import { useMemo, useState } from "react"
 import { useNavigate } from "react-router-dom"
+import { useQueryClient } from "@tanstack/react-query"
 import { useAuth } from "@/contexts/AuthContext"
 import { useDashboardStats } from "@/hooks/useDashboard"
 import { useRunReconciliation } from "@/hooks/useReconciliation"
@@ -18,6 +19,7 @@ import {
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { toast } from "sonner"
+import { cn } from "@/lib/utils"
 import {
   RefreshCw,
   Play,
@@ -30,6 +32,8 @@ import {
 export default function DashboardPage() {
   const navigate = useNavigate()
   const { user } = useAuth()
+  const queryClient = useQueryClient()
+  const [isRefreshing, setIsRefreshing] = useState(false)
 
   const { data: stats, isLoading, isError, refetch } = useDashboardStats()
   const runReconciliation = useRunReconciliation()
@@ -44,6 +48,7 @@ export default function DashboardPage() {
         matchRateNum: 0,
         criticalCount: 0,
         highCount: 0,
+        totalOpenCount: 0,
       }
     }
 
@@ -57,6 +62,7 @@ export default function DashboardPage() {
 
     const criticalCount = stats.severityBreakdown?.CRITICAL ?? 0
     const highCount = stats.severityBreakdown?.HIGH ?? 0
+    const totalOpenCount = Number(stats.openExceptionsCount) || 0
 
     return {
       hasReconciled,
@@ -65,15 +71,31 @@ export default function DashboardPage() {
       matchRateNum,
       criticalCount,
       highCount,
+      totalOpenCount,
     }
   }, [stats])
+
+  // ── Manual refresh handler ────────────────────────────────────────────────
+  const handleRefresh = async () => {
+    setIsRefreshing(true)
+    try {
+      await queryClient.invalidateQueries({ queryKey: ["dashboard"] })
+      await queryClient.refetchQueries({ queryKey: ["dashboard"] })
+      await refetch()
+      toast.success("Dashboard metrics refreshed")
+    } catch {
+      toast.error("Failed to refresh dashboard metrics")
+    } finally {
+      setIsRefreshing(false)
+    }
+  }
 
   // ── Run reconciliation ───────────────────────────────────────────────────
   const handleRunRecon = () => {
     toast.promise(runReconciliation.mutateAsync(), {
       loading: "Running Rules A–H reconciliation engine…",
       success: (res) => {
-        refetch()
+        handleRefresh()
         return `Completed — ${res.exceptionsCreated} new exception${res.exceptionsCreated !== 1 ? "s" : ""} detected.`
       },
       error: "Reconciliation failed. Check backend logs.",
@@ -81,9 +103,9 @@ export default function DashboardPage() {
   }
 
   if (isLoading) return <LoadingState message="Loading dashboard statistics..." />
-  if (isError || !stats) return <ErrorState title="Unable to load dashboard" onRetry={refetch} />
+  if (isError || !stats) return <ErrorState title="Unable to load dashboard" onRetry={handleRefresh} />
 
-  const { hasReconciled, unreconciled, matchRate, matchRateNum, criticalCount, highCount } = derived
+  const { hasReconciled, unreconciled, matchRate, matchRateNum, criticalCount, highCount, totalOpenCount } = derived
 
   return (
     <div className="p-6 md:p-8 max-w-7xl mx-auto space-y-8">
@@ -96,11 +118,12 @@ export default function DashboardPage() {
             <Button
               variant="outline"
               size="sm"
-              onClick={() => refetch()}
+              disabled={isRefreshing}
+              onClick={handleRefresh}
               className="text-xs border-border/80 hover:bg-muted/60 hover:text-foreground transition-all duration-150"
             >
-              <RefreshCw className="w-3.5 h-3.5 mr-1.5" />
-              Refresh
+              <RefreshCw className={cn("w-3.5 h-3.5 mr-1.5", isRefreshing && "animate-spin")} />
+              {isRefreshing ? "Refreshing..." : "Refresh"}
             </Button>
             {user?.role !== "OPERATOR" && (
               <Button
@@ -174,14 +197,25 @@ export default function DashboardPage() {
         <MetricCard
           title="Critical Exceptions"
           value={hasReconciled ? criticalCount : 0}
+          subvalue={
+            hasReconciled ? (
+              <span className="text-xs text-muted-foreground font-medium">
+                {criticalCount} critical · {totalOpenCount} total open
+              </span>
+            ) : null
+          }
           icon={<AlertTriangle className={`w-4 h-4 ${!hasReconciled ? "text-muted-foreground" : criticalCount > 0 ? "text-rose-400" : "text-emerald-400"}`} />}
           accentColor={!hasReconciled ? "text-muted-foreground" : criticalCount > 0 ? "text-rose-400" : "text-emerald-400"}
           description={
             hasReconciled ? (
               <span className="flex items-center gap-1.5">
-                <span className={`w-1.5 h-1.5 rounded-full ${criticalCount > 0 ? "bg-rose-500 animate-pulse" : "bg-emerald-400"}`} />
-                <span className={criticalCount > 0 ? "text-rose-400 font-semibold" : "text-emerald-400/90"}>
-                  {criticalCount > 0 ? `${highCount} HIGH severity active` : "No critical issues"}
+                <span className={`w-1.5 h-1.5 rounded-full ${criticalCount > 0 ? "bg-rose-500 animate-pulse" : totalOpenCount > 0 ? "bg-amber-400" : "bg-emerald-400"}`} />
+                <span className={criticalCount > 0 ? "text-rose-400 font-semibold" : totalOpenCount > 0 ? "text-amber-400 font-medium" : "text-emerald-400/90"}>
+                  {criticalCount > 0
+                    ? `${highCount} HIGH severity active`
+                    : totalOpenCount > 0
+                    ? `${totalOpenCount} open across all severities`
+                    : "No open issues"}
                 </span>
               </span>
             ) : (

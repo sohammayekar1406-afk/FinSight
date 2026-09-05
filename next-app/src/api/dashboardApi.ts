@@ -20,7 +20,13 @@ const DEFAULT_STATS: DashboardStats = {
 
 export const dashboardApi = {
   getStats: async (): Promise<DashboardStats> => {
-    const res = await apiClient.get<unknown>("/api/dashboard/stats")
+    const res = await apiClient.get<unknown>("/api/dashboard/stats", {
+      params: { _t: Date.now() },
+      headers: {
+        "Cache-Control": "no-cache, no-store, must-revalidate",
+        Pragma: "no-cache",
+      },
+    })
     const raw = res?.data
     let stats: Record<string, unknown> | null = null
     if (raw && typeof raw === "object") {

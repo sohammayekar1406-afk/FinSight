@@ -5,6 +5,7 @@ export function useDashboardStats() {
   return useQuery({
     queryKey: ["dashboard", "stats"],
     queryFn: dashboardApi.getStats,
+    staleTime: 0,
     refetchInterval: 30_000, // auto-refresh every 30 seconds
   })
 }

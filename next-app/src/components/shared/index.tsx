@@ -149,7 +149,8 @@ export function SectionCard({
 
 interface MetricCardProps {
   title: string
-  value: string | number
+  value: string | number | ReactNode
+  subvalue?: ReactNode
   description?: ReactNode
   icon?: ReactNode
   trend?: {
@@ -163,6 +164,7 @@ interface MetricCardProps {
 export function MetricCard({
   title,
   value,
+  subvalue,
   description,
   icon,
   trend,
@@ -185,7 +187,7 @@ export function MetricCard({
         )}
       </div>
 
-      <div className="space-y-1">
+      <div className="space-y-1.5">
         <div className="flex items-baseline justify-between gap-2">
           <div className={`text-3xl font-bold tracking-tighter ${accentColor}`}>
             {value}
@@ -202,6 +204,11 @@ export function MetricCard({
             </span>
           )}
         </div>
+        {subvalue && (
+          <div className="text-xs text-muted-foreground font-mono font-medium">
+            {subvalue}
+          </div>
+        )}
         {description && (
           <div className="text-xs text-muted-foreground/70 leading-relaxed font-medium">
             {description}
